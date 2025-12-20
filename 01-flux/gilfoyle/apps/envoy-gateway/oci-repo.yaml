@@ -1,11 +1,13 @@
 apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
+kind: OCIRepository
 metadata:
   name: envoy-gateway
   namespace: envoy-gateway
 spec:
-  url: oci://docker.io/envoyproxy/gateway-helm
-  type: oci
   interval: 120m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
   ref:
-    tag: "v0.0.0-latest"
+    tag: v0.0.0-latest
+  url: oci://mirror.gcr.io/envoyproxy/gateway-helm
