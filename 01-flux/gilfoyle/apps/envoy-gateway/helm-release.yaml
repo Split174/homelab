@@ -4,6 +4,7 @@ metadata:
   name: envoy-gateway
   namespace: envoy-gateway
 spec:
+  releaseName: envoy-gateway
   interval: 120m
   driftDetection:
     mode: enabled
