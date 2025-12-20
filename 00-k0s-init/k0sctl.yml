@@ -9,6 +9,8 @@ spec:
         address: 192.168.100.2
         user: k0s
         port: 22
+      installFlags:
+      - --single
   k0s:
     version: v1.34.2+k0s.0
     config:
