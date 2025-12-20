@@ -20,7 +20,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
-  path: ./01-flux/gilfoyle
+  path: ./01-flux/gilfoyle/flux-system
   prune: true
   sourceRef:
     kind: GitRepository
