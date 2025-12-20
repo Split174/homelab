@@ -10,7 +10,6 @@ spec:
   chartRef:
     kind: OCIRepository
     name: envoy-gateway
-    namespace: envoy-gateway
   values:
     config:
       envoyGateway:
