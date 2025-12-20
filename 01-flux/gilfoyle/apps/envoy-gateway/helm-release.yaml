@@ -8,8 +8,9 @@ spec:
   driftDetection:
     mode: enabled
   chartRef:
-    kind: OCIRepository
+    kind: HelmRepository
     name: envoy-gateway
+    namespace: envoy-gateway
   values:
     config:
       envoyGateway:
