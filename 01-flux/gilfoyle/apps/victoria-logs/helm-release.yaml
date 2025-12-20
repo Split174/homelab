@@ -27,7 +27,7 @@ spec:
         enabled: true
         size: 30Gi
       vmServiceScrape:
-        enabled: true
+        enabled: false
     vector:
       enabled: true
     dashboards:
