@@ -2,6 +2,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
   name: gw-external
+  namespace: envoy-gateway
 spec:
   controllerName: gateway.envoyproxy.io/gatewayclass-controller
   parametersRef:
@@ -13,6 +14,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: gw-external
+  namespace: envoy-gateway
 spec:
   gatewayClassName: gw-external
   listeners:
@@ -27,6 +29,7 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
   name: gw-external
+  namespace: envoy-gateway
 spec:
   shutdown:
     drainTimeout: "1s"
