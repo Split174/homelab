@@ -5,3 +5,4 @@ resources:
 - ./victoria-logs
 - ./local-path-storage
 - ./envoy-gateway
+- ./metallb
