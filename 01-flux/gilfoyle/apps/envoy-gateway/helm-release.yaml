@@ -12,6 +12,7 @@ spec:
     kind: OCIRepository
     name: envoy-gateway
   values:
+    kubernetesClusterDomain: cluster.gilfoyle
     config:
       envoyGateway:
         extensionApis:
