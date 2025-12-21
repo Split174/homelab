@@ -4,3 +4,4 @@ resources:
 - oci-repo.yaml
 - helm-release.yaml
 - namespace.yaml
+- gateway-external.yaml
