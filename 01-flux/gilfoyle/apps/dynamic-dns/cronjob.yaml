@@ -24,7 +24,8 @@ spec:
                 for domain in $(echo $DOMAINS | tr "," " "); do
                   echo "Updating domain: $domain"
                   
-                  curl -XGET -vk "http://${FREEDNS_USER}:${FREEDNS_PASS}@freedns.afraid.org/nic/update?hostname=${domain}&myip=${MY_IP}"
+                  curl -XGET -vk -u "${FREEDNS_USER}:${FREEDNS_PASS}" \
+                    "https://freedns.afraid.org/nic/update?hostname=${domain}&myip=${MY_IP}"
                   
                   echo ""
                 done
