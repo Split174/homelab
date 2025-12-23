@@ -22,6 +22,10 @@ spec:
       retries: 3
   # Defaults: https://github.com/VictoriaMetrics/helm-charts/blob/master/charts/victoria-logs-single/values.yaml
   values:
+    global:
+      cluster: cluster.gilfoyle
+    dashboards:
+      enabled: false
     server:
       persistentVolume:
         enabled: true
