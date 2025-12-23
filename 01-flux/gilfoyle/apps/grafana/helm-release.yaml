@@ -28,3 +28,4 @@ spec:
     sidecar:
       datasources:
         enabled: true
+        searchNamespace: ALL
