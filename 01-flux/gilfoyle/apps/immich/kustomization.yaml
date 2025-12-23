@@ -6,3 +6,4 @@ resources:
   - immich-library-pvc.yaml
   - helm-release.yaml
   - oci-repo.yaml
+  - http-route.yaml
