@@ -27,7 +27,7 @@ spec:
     installCRDs: false
     prometheus:
       servicemonitor:
-        enabled: true
+        enabled: false
     # serviceAccount:
     #   annotations:
     #     eks.amazonaws.com/role-arn: arn:aws:iam::${aws_account_id}:role/${cluster_name}-irsa-cert-manager
