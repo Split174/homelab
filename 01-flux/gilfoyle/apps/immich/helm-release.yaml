@@ -16,7 +16,10 @@ spec:
     machine-learning:
       enabled: false
     valkey:
-      hardcodedValues: true
+      enabled: true
+      persistence:
+        data:
+          enabled: false
     immich:
       persistence:
         library:
