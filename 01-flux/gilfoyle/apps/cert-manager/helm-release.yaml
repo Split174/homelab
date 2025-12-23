@@ -27,6 +27,8 @@ spec:
     config:
       enableGatewayAPI: true
     installCRDs: true
+    crds:
+      enabled: true
     prometheus:
       servicemonitor:
         enabled: false
