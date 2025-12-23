@@ -23,6 +23,9 @@ spec:
       retries: 3
   # Defaults: https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
   values:
+    plugins:
+      - victoriametrics-logs-datasource
+      - victoriametrics-metrics-datasource
     persistence:
       enabled: false
     sidecar:
