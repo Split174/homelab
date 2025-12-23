@@ -24,7 +24,7 @@ spec:
       retries: 3
   # Default values: https://github.com/cert-manager/cert-manager/blob/master/deploy/charts/cert-manager/values.yaml
   values:
-    installCRDs: false
+    installCRDs: true
     prometheus:
       servicemonitor:
         enabled: false
