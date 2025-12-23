@@ -8,7 +8,7 @@ spec:
     - name: gw-external
       namespace: envoy-gateway
   hostnames:
-    - "grafana.192.168.100.2.sslip.io"
+    - "grafana.themiple.ru"
   rules:
     - backendRefs:
         - group: ""
