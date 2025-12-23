@@ -1,24 +1,24 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
-  name: gw-external
+  name: gw-nodeport
   namespace: envoy-gateway
 spec:
   controllerName: gateway.envoyproxy.io/gatewayclass-controller
   parametersRef:
     group: gateway.envoyproxy.io
     kind: EnvoyProxy
-    name: gw-external
+    name: gw-nodeport
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: gw-external
+  name: gw-nodeport
   namespace: envoy-gateway
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
 spec:
-  gatewayClassName: gw-external
+  gatewayClassName: gw-nodeport
   listeners:
     - name: http
       protocol: HTTP
@@ -41,7 +41,7 @@ spec:
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
-  name: gw-external
+  name: gw-nodeport
   namespace: envoy-gateway
 spec:
   shutdown:

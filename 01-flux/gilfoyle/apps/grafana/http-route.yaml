@@ -5,7 +5,7 @@ metadata:
   namespace: grafana
 spec:
   parentRefs:
-    - name: gw-external
+    - name: gw-nodeport
       namespace: envoy-gateway
   hostnames:
     - "grafana.themiple.ru"
