@@ -38,17 +38,3 @@ spec:
           name: letsencrypt
     
 ---
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: EnvoyProxy
-metadata:
-  name: gw-external
-  namespace: envoy-gateway
-spec:
-  shutdown:
-    drainTimeout: "1s"
-    minDrainDuration: "1s"
-  provider:
-    type: Kubernetes
-    kubernetes:
-      envoyService:
-        type: NodePort
