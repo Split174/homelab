@@ -32,3 +32,6 @@ spec:
       datasources:
         enabled: true
         searchNamespace: ALL
+      dashboards:
+        enabled: true
+        searchNamespace: ALL
