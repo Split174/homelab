@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: vls-datasource
-  namespace: victoria-logs
+  namespace: grafana
   labels:
     grafana_datasource: "1"
 data:
