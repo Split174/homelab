@@ -23,7 +23,8 @@ spec:
   # Defaults: https://github.com/VictoriaMetrics/helm-charts/blob/master/charts/victoria-logs-single/values.yaml
   values:
     global:
-      cluster: cluster.gilfoyle
+      cluster: 
+        dnsDomain: cluster.gilfoyle
     server:
       persistentVolume:
         enabled: true
