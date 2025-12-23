@@ -3,3 +3,6 @@ kind: Kustomization
 resources:
   - pg.yaml
   - namespace.yaml
+  - immich-library-pvc.yaml
+  - helm-release.yaml
+  - oci-repo.yaml

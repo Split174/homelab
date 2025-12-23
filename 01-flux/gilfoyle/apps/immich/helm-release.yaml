@@ -1,0 +1,56 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: immich
+  namespace: immich
+spec:
+  releaseName: immich
+  interval: 120m
+  driftDetection:
+    mode: enabled
+  chartRef:
+    kind: OCIRepository
+    name: immich
+  # Default values https://github.com/immich-app/immich-charts/blob/main/charts/immich/values.yaml
+  values:
+    machine-learning:
+      enabled: false
+    valkey:
+      hardcodedValues: true
+    immich:
+      persistence:
+        library:
+          existingClaim: immich-library-pvc
+      configuration:
+        trash:
+          enabled: true
+          days: 180
+        storageTemplate:
+          enabled: true
+          template: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+    server:
+      controllers:
+        main:
+          containers:
+            main:
+              env:
+                DB_HOSTNAME:
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-database-app
+                      key: host
+                DB_USERNAME:
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-database-app
+                      key: user
+                DB_PASSWORD:
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-database-app
+                      key: password
+                DB_DATABASE_NAME:
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-database-app
+                      key: dbname
