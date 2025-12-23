@@ -9,3 +9,4 @@ resources:
 - ./cert-manager
 - ./dynamic-dns
 - ./cloudnative-pg
+- ./immich
