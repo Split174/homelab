@@ -9,6 +9,7 @@ spec:
       namespace: envoy-gateway
   hostnames:
     - "grafana.themiple.ru"
+    - "grafana.192.168.100.2.sslip.io"
   rules:
     - backendRefs:
         - group: ""
