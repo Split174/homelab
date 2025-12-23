@@ -9,7 +9,7 @@ spec:
     group: gateway.envoyproxy.io
     kind: EnvoyProxy
     name: gw-external
-    namespace: gw-external
+    namespace: envoy-gateway
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
