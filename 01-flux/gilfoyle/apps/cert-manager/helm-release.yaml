@@ -24,7 +24,8 @@ spec:
       retries: 3
   # Default values: https://github.com/cert-manager/cert-manager/blob/master/deploy/charts/cert-manager/values.yaml
   values:
-    enableGatewayAPI: true
+    config:
+      enableGatewayAPI: true
     installCRDs: true
     prometheus:
       servicemonitor:
