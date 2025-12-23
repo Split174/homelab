@@ -52,13 +52,18 @@ spec:
     type: Kubernetes
     kubernetes:
       envoyService:
-        type: ClusterIP
-      envoyDeployment:
+        type: NodePort
         patch:
           type: StrategicMerge
           value:
             spec:
-              template:
-                spec:
-                  hostNetwork: true
-                  dnsPolicy: ClusterFirstWithHostNet
+              type: NodePort
+              ports:
+                - name: http
+                  port: 80
+                  protocol: TCP
+                  nodePort: 30080
+                - name: https
+                  port: 443
+                  protocol: TCP
+                  nodePort: 30443
