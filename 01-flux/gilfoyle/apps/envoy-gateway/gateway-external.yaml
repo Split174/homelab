@@ -22,13 +22,13 @@ spec:
   listeners:
     - name: http
       protocol: HTTP
-      port: 30080
+      port: 80
       allowedRoutes:
         namespaces:
           from: All
     - name: https
       protocol: HTTPS
-      port: 30443
+      port: 443
       hostname: "*.themiple.ru"
       tls:
         mode: Terminate
@@ -58,7 +58,11 @@ spec:
             spec:
               type: NodePort
               ports:
-                - port: 80
+                - name: http
+                  port: 80
+                  protocol: TCP
                   nodePort: 30080
-                - port: 443
+                - name: https
+                  port: 443
+                  protocol: TCP
                   nodePort: 30443
