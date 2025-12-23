@@ -24,8 +24,6 @@ spec:
   values:
     global:
       cluster: cluster.gilfoyle
-    dashboards:
-      enabled: false
     server:
       persistentVolume:
         enabled: true
