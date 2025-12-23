@@ -1,0 +1,3 @@
+# Игнорировать любые .yaml файлы, в названии которых есть secret, но нет enc
+*secret*.yaml
+!*secret*.enc.yaml

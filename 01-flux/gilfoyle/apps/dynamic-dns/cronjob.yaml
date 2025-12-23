@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: freedns-updater
+  namespace: freedns
+spec:
+  schedule: "*/30 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: updater
+            image: curlimages/curl:latest
+            imagePullPolicy: IfNotPresent
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                MY_IP=$(curl -s ifconfig.me)
+                echo "Detected IP: $MY_IP"
+
+                for domain in $(echo $DOMAINS | tr "," " "); do
+                  echo "Updating domain: $domain"
+                  
+                  curl -XGET -vk "http://${FREEDNS_USER}:${FREEDNS_PASS}@freedns.afraid.org/nic/update?hostname=${domain}&myip=${MY_IP}"
+                  
+                  echo ""
+                done
+            env:
+            - name: DOMAINS
+              value: "grafana.themiple.com,dex.themiple.com,immich.themiple.com"
+            
+            - name: FREEDNS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: freedns-secret
+                  key: username
+            - name: FREEDNS_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: freedns-secret
+                  key: password
+          restartPolicy: OnFailure
