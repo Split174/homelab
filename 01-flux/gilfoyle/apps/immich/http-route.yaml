@@ -9,7 +9,6 @@ spec:
       namespace: envoy-gateway
   hostnames:
     - "immich.themiple.ru"
-    - "immich.192.168.100.2.sslip.io"
   rules:
     - backendRefs:
         - group: ""

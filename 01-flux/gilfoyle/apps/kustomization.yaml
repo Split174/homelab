@@ -5,8 +5,10 @@ resources:
 - ./victoria-logs
 - ./local-path-storage
 - ./envoy-gateway
-- ./metallb
+#- ./metallb
 - ./cert-manager
 - ./dynamic-dns
 - ./cloudnative-pg
 - ./immich
+- ./mailrise
+- ./pocketid
