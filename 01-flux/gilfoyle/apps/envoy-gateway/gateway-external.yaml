@@ -57,22 +57,21 @@ spec:
           selector:
             matchLabels:
               kubernetes.io/metadata.name: immich
-    #- name: https-pocketid
-    #  protocol: HTTPS
-    #  port: 443
-    #  hostname: "pocketid.themiple.ru"
-    #  tls:
-    #    mode: Terminate
-    #    certificateRefs:
-    #    - kind: Secret
-    #      name: pocketid-tls
-    #  allowedRoutes:
-    #    namespaces:
-    #      from: Selector
-    #      selector:
-    #        matchLabels:
-    #          kubernetes.io/metadata.name: pocketid           
-    
+    - name: https-pocketid
+      protocol: HTTPS
+      port: 443
+      hostname: "pocketid.themiple.ru"
+      tls:
+        mode: Terminate
+        certificateRefs:
+        - kind: Secret
+          name: pocketid-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: pocketid           
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
