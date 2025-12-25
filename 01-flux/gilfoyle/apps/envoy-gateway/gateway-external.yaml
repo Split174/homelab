@@ -27,16 +27,18 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
-    - name: https
+    - name: https-grafana
       protocol: HTTPS
       port: 443
-      hostname: "*.themiple.ru"
+      hostname: "grafana.themiple.ru"
       tls:
         mode: Terminate
         certificateRefs:
         - kind: Secret
-          group: ""
-          name: letsencrypt
+          name: grafana-tls
+      allowedRoutes:
+        namespaces:
+          from: grafana
     
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
