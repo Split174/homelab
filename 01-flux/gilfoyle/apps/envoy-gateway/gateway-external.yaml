@@ -112,7 +112,6 @@ spec:
     - group: gateway.networking.k8s.io
       kind: Gateway
       name: gw-external
-      namespace: envoy-gateway
   clientIPDetection:
     xForwardedFor:
       numTrustedHops: 2
