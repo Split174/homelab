@@ -24,13 +24,13 @@ spec:
       persistence:
         library:
           existingClaim: immich-library-pvc
-      configuration:
-        trash:
-          enabled: true
-          days: 180
-        storageTemplate:
-          enabled: true
-          template: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+      #configuration:
+      #  trash:
+      #    enabled: true
+      #    days: 180
+      #  storageTemplate:
+      #    enabled: true
+      #    template: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
     server:
       controllers:
         main:
