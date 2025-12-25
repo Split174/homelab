@@ -101,3 +101,18 @@ spec:
                   port: 443
                   protocol: TCP
                   nodePort: 30443
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: http-client-ip-detection
+  namespace: envoy-gateway
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gw-external
+      namespace: envoy-gateway
+  clientIPDetection:
+    xForwardedFor:
+      numTrustedHops: 2
