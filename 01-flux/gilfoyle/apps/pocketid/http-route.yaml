@@ -20,3 +20,9 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      filters:
+      - type: RequestHeaderModifier
+        requestHeaderModifier:
+          set:
+          - name: "x-real-ip"
+            value: "%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%"            
