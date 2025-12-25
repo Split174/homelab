@@ -38,7 +38,40 @@ spec:
           name: grafana-tls
       allowedRoutes:
         namespaces:
-          from: grafana
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: grafana
+    - name: https-immich
+      protocol: HTTPS
+      port: 443
+      hostname: "immich.themiple.ru"
+      tls:
+        mode: Terminate
+        certificateRefs:
+        - kind: Secret
+          name: immich-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: immich
+    #- name: https-pocketid
+    #  protocol: HTTPS
+    #  port: 443
+    #  hostname: "pocketid.themiple.ru"
+    #  tls:
+    #    mode: Terminate
+    #    certificateRefs:
+    #    - kind: Secret
+    #      name: pocketid-tls
+    #  allowedRoutes:
+    #    namespaces:
+    #      from: Selector
+    #      selector:
+    #        matchLabels:
+    #          kubernetes.io/metadata.name: pocketid           
     
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1

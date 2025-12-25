@@ -31,7 +31,7 @@ spec:
                 done
             env:
             - name: DOMAINS
-              value: "grafana.themiple.ru,dex.themiple.ru,immich.themiple.ru"
+              value: "grafana.themiple.ru,pocketid.themiple.ru,immich.themiple.ru"
             
             - name: FREEDNS_USER
               valueFrom:
