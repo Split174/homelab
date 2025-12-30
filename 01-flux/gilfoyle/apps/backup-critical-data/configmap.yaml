@@ -18,6 +18,7 @@ data:
         to: jipoksftp
         options:
           backup:
+            host: "k8s-immich-worker" 
             exclude:
               - "thumbs/"
               - "encoded-video/"
