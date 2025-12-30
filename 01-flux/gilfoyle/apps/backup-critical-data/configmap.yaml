@@ -50,4 +50,3 @@ data:
       jipoksftp:
         type: sftp
         path: sftp:serj@ateam.undo.it:/home/serj/hdd/immich-backup
-        key: /root/.ssh/id_rsa
