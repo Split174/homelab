@@ -49,5 +49,5 @@ data:
     backends:
       jipoksftp:
         type: sftp
-        path: sftp:serj@ateam.undo.it:/home/serj/hdd/immich-backup
+        path: serj@ateam.undo.it:/home/serj/hdd/immich-backup
         
