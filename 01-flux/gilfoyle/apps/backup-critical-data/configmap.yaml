@@ -29,14 +29,12 @@ data:
             keep-yearly: 3
             prune: true
         hooks:
-          # Если бэкап упал
           failure:
             - >-
               wget -qO- 
               --post-data "chat_id=$TELEGRAM_CHAT_ID&text=❌ <b>Backup Failed!</b>%0A%0ALocation: $AUTORESTIC_LOCATION%0ACheck logs for details.&parse_mode=HTML" 
               "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"
 
-          # Если бэкап прошел успешно
           success:
             - >-
               wget -qO- 

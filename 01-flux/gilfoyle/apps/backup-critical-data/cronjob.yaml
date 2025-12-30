@@ -16,7 +16,7 @@ spec:
           containers:
             - name: autorestic
               image: cupcakearmy/autorestic:1.8.3
-              command: ["autorestic", "check"]
+              command: ["/bin/sh", "-c", "sleep 3600"] #["autorestic", "check"]
               envFrom:
                  - secretRef:
                      name: autorestic-secrets
