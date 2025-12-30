@@ -30,6 +30,9 @@ spec:
                 - name: ssh-key
                   mountPath: /root/.ssh/id_rsa
                   subPath: id_rsa
+                - name: config
+                  mountPath: /root/.ssh/config
+                  subPath: ssh-config                  
           restartPolicy: OnFailure
           volumes:
             - name: host-storage

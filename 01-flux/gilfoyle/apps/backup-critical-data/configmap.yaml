@@ -4,6 +4,11 @@ metadata:
   name: global-autorestic-config
   namespace: backup-critical-data
 data:
+  ssh-config: |
+    Host *
+      StrictHostKeyChecking no
+      UserKnownHostsFile /dev/null
+
   .autorestic.yml: |
     version: 2
     
@@ -48,5 +53,3 @@ data:
         type: sftp
         path: sftp:serj@ateam.undo.it:/home/serj/hdd/immich-backup
         key: /root/.ssh/id_rsa
-        options:
-          o: "StrictHostKeyChecking=no"
