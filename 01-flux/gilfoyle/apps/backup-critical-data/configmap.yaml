@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: global-autorestic-config
+  namespace: backup-critical-data
+data:
+  .autorestic.yml: |
+    version: 2
+    
+    locations:
+      immich-library:
+        from: /mnt/pvc-f44fd884-aa55-4d12-9081-c2d586b96a63_immich_immich-library-pvc
+        to: jipok-sftp
+        options:
+          backup:
+            exclude:
+              - "thumbs/"
+              - "encoded-video/"
+          forget:
+            keep-last: 7
+            keep-daily: 7
+            keep-weekly: 4
+            keep-monthly: 6
+            keep-yearly: 3
+            prune: true
+        hooks:
+          # Если бэкап упал
+          failure:
+            - >-
+              wget -qO- 
+              --post-data "chat_id=$TELEGRAM_CHAT_ID&text=❌ <b>Backup Failed!</b>%0A%0ALocation: $AUTORESTIC_LOCATION%0ACheck logs for details.&parse_mode=HTML" 
+              "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"
+
+          # Если бэкап прошел успешно
+          success:
+            - >-
+              wget -qO- 
+              --post-data "chat_id=$TELEGRAM_CHAT_ID&text=✅ <b>Backup Successful</b>%0A%0A📁 Location: $AUTORESTIC_LOCATION%0A📸 Snapshot: $AUTORESTIC_SNAPSHOT_ID_0%0A📊 Added Size: $AUTORESTIC_ADDED_SIZE_0%0A⏱ Duration: $AUTORESTIC_PROCESSED_DURATION_0&parse_mode=HTML" 
+              "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"
+
+      #other-app-data:
+      #  from: /data/other-ns_other-pvc_*
+      #  to: secure-backend
+
+
+    backends:
+      jipok-sftp:
+        type: sftp
+        path: sftp:serj@ateam.undo.it:/home/serj/hdd/immich-backup
+        key: /root/.ssh/id_rsa
+        options:
+          o: "StrictHostKeyChecking=no"

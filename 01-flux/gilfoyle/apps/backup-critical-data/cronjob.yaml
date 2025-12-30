@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: global-backup
+  namespace: backup-critical-data
+spec:
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid 
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+            runAsUser: 0
+            privileged: true 
+          containers:
+            - name: autorestic
+              image: cupcakearmy/autorestic:1.8.3
+              command: ["autorestic", "check"]
+              envFrom:
+                 - secretRef:
+                     name: autorestic-secrets
+              volumeMounts:
+                - name: host-storage
+                  mountPath: /mnt
+                  readOnly: true
+                - name: config
+                  mountPath: /root/.autorestic.yml
+                  subPath: .autorestic.yml
+                - name: ssh-key
+                  mountPath: /root/.ssh/id_rsa
+                  subPath: id_rsa
+          restartPolicy: OnFailure
+          volumes:
+            - name: host-storage
+              hostPath:
+                path: /mnt/critical-data
+                type: Directory
+            - name: config
+              configMap:
+                name: global-autorestic-config
+            - name: ssh-key
+              secret:
+                secretName: autorestic-secrets
+                defaultMode: 0400

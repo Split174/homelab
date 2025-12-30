@@ -12,3 +12,4 @@ resources:
 - ./immich
 - ./mailrise
 - ./pocketid
+- ./backup-critical-data

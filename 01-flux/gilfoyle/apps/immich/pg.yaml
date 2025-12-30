@@ -15,5 +15,7 @@ spec:
   bootstrap:
     initdb:
       postInitApplicationSQL:
+      # нужен ALTER было ставить для работы встроенных бэкапов. Выполнил руками
+      # - ALTER USER immich WITH SUPERUSER;       
         - CREATE EXTENSION vchord CASCADE;
         - CREATE EXTENSION earthdistance CASCADE;
