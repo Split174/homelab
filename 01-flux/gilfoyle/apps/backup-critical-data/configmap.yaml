@@ -13,9 +13,9 @@ data:
     version: 2
     
     locations:
-      immich-library:
+      immich:
         from: /mnt/pvc-f44fd884-aa55-4d12-9081-c2d586b96a63_immich_immich-library-pvc
-        to: jipok-sftp
+        to: jipoksftp
         options:
           backup:
             exclude:
@@ -47,7 +47,7 @@ data:
 
 
     backends:
-      jipok-sftp:
+      jipoksftp:
         type: sftp
         path: sftp:serj@ateam.undo.it:/home/serj/hdd/immich-backup
         key: /root/.ssh/id_rsa
