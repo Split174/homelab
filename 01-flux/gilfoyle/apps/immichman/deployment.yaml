@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immichman
+  namespace: immichman
+  labels:
+    app: immichman
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate 
+  selector:
+    matchLabels:
+      app: immichman
+  template:
+    metadata:
+      labels:
+        app: immichman
+    spec:
+      containers:
+        - name: immichman
+          image: ghcr.io/split174/immichman:master
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: immichman-secret

@@ -13,3 +13,4 @@ resources:
 - ./mailrise
 - ./pocketid
 - ./backup-critical-data
+- ./immichman
