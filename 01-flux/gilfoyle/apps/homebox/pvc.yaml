@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: homebox-data
+  namespace: homebox
+  labels:
+    app: homebox
+spec:
+  storageClassName: local-path-critical
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

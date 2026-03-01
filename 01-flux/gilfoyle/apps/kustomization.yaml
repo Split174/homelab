@@ -14,3 +14,4 @@ resources:
 - ./pocketid
 - ./backup-critical-data
 - ./immichman
+- ./homebox
