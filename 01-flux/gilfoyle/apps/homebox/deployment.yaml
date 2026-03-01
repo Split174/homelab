@@ -36,6 +36,8 @@ spec:
               value: "true"
             - name: HBOX_OIDC_VERIFY_EMAIL
               value: "false"
+            - name: HBOX_OPTIONS_ALLOW_LOCAL_LOGIN
+              values: "false"
             - name: HBOX_OIDC_CLIENT_ID
               valueFrom:
                 secretKeyRef:
