@@ -32,12 +32,10 @@ spec:
               value: "true"
             - name: HBOX_OIDC_ISSUER_URL
               value: "https://pocketid.themiple.ru"
-            - name: HBOX_OIDC_SCOPE
-              value: "openid profile email groups"
             - name: HBOX_OPTIONS_TRUST_PROXY
               value: "true"
             - name: HBOX_OIDC_VERIFY_EMAIL
-              value: "true"
+              value: "false"
             - name: HBOX_OIDC_CLIENT_ID
               valueFrom:
                 secretKeyRef:
