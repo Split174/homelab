@@ -15,7 +15,7 @@ data:
     locations:
       immich:
         from: /mnt/pvc-f44fd884-aa55-4d12-9081-c2d586b96a63_immich_immich-library-pvc
-        to: jipoksftp-immich
+        to: jipoksftp
         options:
           backup:
             host: "k8s-immich-worker" 
@@ -43,8 +43,8 @@ data:
               "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"
 
       homebox:
-        from: /mnt/critical-data/pvc-35f1d939-e914-452f-8ab1-8a751cd066c3_homebox_homebox-data
-        to: jipoksftp-homebox
+        from: /mnt/pvc-35f1d939-e914-452f-8ab1-8a751cd066c3_homebox_homebox-data
+        to: jipoksftp
         options:
           backup:
             host: "k8s-homebox-worker" 
@@ -69,10 +69,6 @@ data:
               "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"
 
     backends:
-      jipoksftp-immich:
+      jipoksftp:
         type: sftp
-        path: serj@ateam.undo.it:/home/serj/hdd/immich-backup
-      
-      jipoksftp-homebox:
-        type: sftp
-        path: serj@ateam.undo.it:/home/serj/hdd/homebox-backup
+        path: serj@ateam.undo.it:/home/serj/hdd/k8s-backups
