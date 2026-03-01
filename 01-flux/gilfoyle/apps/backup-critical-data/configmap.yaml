@@ -15,7 +15,7 @@ data:
     locations:
       immich:
         from: /mnt/pvc-f44fd884-aa55-4d12-9081-c2d586b96a63_immich_immich-library-pvc
-        to: jipoksftp
+        to: jipoksftp-immich
         options:
           backup:
             host: "k8s-immich-worker" 
@@ -42,13 +42,37 @@ data:
               --post-data "chat_id=$TELEGRAM_CHAT_ID&text=✅ <b>Backup Successful</b>%0A%0A📁 Location: $AUTORESTIC_LOCATION%0A📸 Snapshot: $AUTORESTIC_SNAPSHOT_ID_0%0A📊 Added Size: $AUTORESTIC_ADDED_SIZE_0%0A⏱ Duration: $AUTORESTIC_PROCESSED_DURATION_0&parse_mode=HTML" 
               "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"
 
-      #other-app-data:
-      #  from: /data/other-ns_other-pvc_*
-      #  to: secure-backend
+      homebox:
+        from: /mnt/critical-data/pvc-35f1d939-e914-452f-8ab1-8a751cd066c3_homebox_homebox-data
+        to: jipoksftp-homebox
+        options:
+          backup:
+            host: "k8s-homebox-worker" 
+          forget:
+            keep-last: 7
+            keep-daily: 7
+            keep-weekly: 4
+            keep-monthly: 6
+            keep-yearly: 3
+            prune: true
+        hooks:
+          failure:
+            - >-
+              wget -qO- 
+              --post-data "chat_id=$TELEGRAM_CHAT_ID&text=❌ <b>Backup Failed!</b>%0A%0ALocation: $AUTORESTIC_LOCATION%0ACheck logs for details.&parse_mode=HTML" 
+              "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"
 
+          success:
+            - >-
+              wget -qO- 
+              --post-data "chat_id=$TELEGRAM_CHAT_ID&text=✅ <b>Backup Successful</b>%0A%0A📁 Location: $AUTORESTIC_LOCATION%0A📸 Snapshot: $AUTORESTIC_SNAPSHOT_ID_0%0A📊 Added Size: $AUTORESTIC_ADDED_SIZE_0%0A⏱ Duration: $AUTORESTIC_PROCESSED_DURATION_0&parse_mode=HTML" 
+              "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"
 
     backends:
-      jipoksftp:
+      jipoksftp-immich:
         type: sftp
         path: serj@ateam.undo.it:/home/serj/hdd/immich-backup
-        
+      
+      jipoksftp-homebox:
+        type: sftp
+        path: serj@ateam.undo.it:/home/serj/hdd/homebox-backup
