@@ -40,8 +40,12 @@ spec:
         namespaces:
           from: Selector
           selector:
-            matchLabels:
-              kubernetes.io/metadata.name: grafana
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - grafana
+                  - envoy-gateway
     - name: https-immich
       protocol: HTTPS
       port: 443
@@ -55,8 +59,12 @@ spec:
         namespaces:
           from: Selector
           selector:
-            matchLabels:
-              kubernetes.io/metadata.name: immich
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - immich
+                  - envoy-gateway
     - name: https-pocketid
       protocol: HTTPS
       port: 443
@@ -70,8 +78,31 @@ spec:
         namespaces:
           from: Selector
           selector:
-            matchLabels:
-              kubernetes.io/metadata.name: pocketid           
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - pocketid
+                  - envoy-gateway
+    - name: https-homebox
+      protocol: HTTPS
+      port: 443
+      hostname: "homebox.themiple.ru"
+      tls:
+        mode: Terminate
+        certificateRefs:
+        - kind: Secret
+          name: homebox-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - homebox
+                  - envoy-gateway                
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
