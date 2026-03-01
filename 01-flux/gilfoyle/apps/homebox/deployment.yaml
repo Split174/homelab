@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: homebox
-          image: ghcr.io/sysadminsmedia/homebox:v0.23.1
+          image: ghcr.io/sysadminsmedia/homebox:0.23.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 7745
