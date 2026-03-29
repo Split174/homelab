@@ -41,6 +41,7 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         runAsNonRoot: true
+        fsGroup: 1000 
       containers:
       - name: hellpot
         image: ghcr.io/yunginnanet/hellpot:0.5.4
@@ -57,10 +58,14 @@ spec:
         volumeMounts:
         - name: config-volume
           mountPath: /etc/hellpot/
+        - name: logs-volume
+          mountPath: /logs          
       volumes:
       - name: config-volume
         configMap:
           name: hellpot-config
+      - name: logs-volume
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
