@@ -1,5 +1,5 @@
 # Путь к твоему конфигу
-export KUBECONFIG := /tmp/secure-fs/vault/personal/homelabs/gilfoyle.yaml
+export KUBECONFIG := ./.private-files/gilfoyle.yaml
 
 .PHONY: debug status check-git check-ks check-helm logs lint reconcile
 
