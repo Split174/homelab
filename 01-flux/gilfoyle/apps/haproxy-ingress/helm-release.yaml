@@ -42,7 +42,7 @@ spec:
             targetPort: https
             nodePort: 30443
       defaultBackendService: honeypot/hellpot-service
-      config: |
+      config:
         global-config-snippet: |
           backend st_bad_ips
             stick-table type ip size 1m expire 24h store gpc0
