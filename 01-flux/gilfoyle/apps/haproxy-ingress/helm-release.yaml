@@ -43,7 +43,7 @@ spec:
             nodePort: 30443
       defaultBackendService: honeypot/hellpot-service
       config:
-        frontend-config-snippet: |
+        config-frontend: |
             stick-table type ip size 100k expire 24h store gpc0
 
             http-request track-sc0 req.hdr(X-Forwarded-For,-1) if { req.hdr(X-Forwarded-For) -m found }
