@@ -44,16 +44,15 @@ spec:
       defaultBackendService: honeypot/hellpot-service
       config:
         config-frontend: |
-            stick-table type ip size 100k expire 24h store gpc0
+          stick-table type ip size 100k expire 24h store gpc0
+          
+          http-request track-sc0 req.hdr(X-Forwarded-For,-1) if { req.hdr(X-Forwarded-For) -m found }
+          http-request track-sc0 src if !{ req.hdr(X-Forwarded-For) -m found }
 
-            http-request track-sc0 req.hdr(X-Forwarded-For,-1) if { req.hdr(X-Forwarded-For) -m found }
-            http-request track-sc0 src if !{ req.hdr(X-Forwarded-For) -m found }
+          acl bad_paths path -m beg -i /.env /.git /.secrets /wp-admin /bitrix
 
-            acl bad_paths path -m beg -i /.git /.secrets /wp-admin /.env /bitrix
-
-            http-request sc-inc-gpc0(0) if bad_paths
-
-            http-request tarpit deny_status 418 if { sc0_get_gpc0 gt 0 }
+          http-request sc-inc-gpc0(0) if bad_paths
+          http-request tarpit deny_status 418 if { sc0_get_gpc0 gt 0 }
       stats:
         enabled: true
       metrics:
