@@ -17,7 +17,7 @@ data:
     
     [logger]
     debug = false
-    log_file = "" 
+    directory = "" 
     
     [performance]
     chunk_size = 10000 
