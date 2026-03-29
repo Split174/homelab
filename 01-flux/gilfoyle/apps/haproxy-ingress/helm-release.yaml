@@ -42,6 +42,20 @@ spec:
             targetPort: https
             nodePort: 30443
       defaultBackendService: honeypot/hellpot-service
+      config: |
+        global-config-snippet: |
+          backend st_bad_ips
+            stick-table type ip size 1m expire 24h store gpc0
+
+        frontend-config-snippet: |
+          http-request silent-drop if { src,table_gpc0(st_bad_ips) gt 0 }
+
+          acl is_bad_path path -m beg /.env /.git /wp-admin /phpmyadmin
+          
+          http-request track-sc0 src table st_bad_ips if is_bad_path
+          http-request sc-inc-gpc0(0) if is_bad_path
+          
+          use_backend honeypot_hellpot-service_8080 if is_bad_path      
       stats:
         enabled: true
       metrics:
