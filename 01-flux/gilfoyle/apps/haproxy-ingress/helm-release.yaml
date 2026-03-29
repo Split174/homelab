@@ -55,7 +55,7 @@ spec:
           http-request track-sc0 src table st_bad_ips if is_bad_path
           http-request sc-inc-gpc0(0) if is_bad_path
           
-          use_backend honeypot_hellpot-service_8080 if is_bad_path      
+          http-request set-header Host go-to-hell.local if is_bad_path    
       stats:
         enabled: true
       metrics:
