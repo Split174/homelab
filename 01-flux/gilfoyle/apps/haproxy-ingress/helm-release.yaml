@@ -46,7 +46,8 @@ spec:
         frontend-config-snippet: |
             stick-table type ip size 100k expire 24h store gpc0
 
-            http-request track-sc0 src
+            http-request track-sc0 req.hdr(X-Forwarded-For,-1) if { req.hdr(X-Forwarded-For) -m found }
+            http-request track-sc0 src if !{ req.hdr(X-Forwarded-For) -m found }
 
             acl bad_paths path -m beg -i /.git /.secrets /wp-admin /.env /bitrix
 
