@@ -6,4 +6,4 @@ resources:
   - secret.enc.yaml
   - service.yaml
   - sts.yaml
-  - http-route.yaml
+  - ingress.yaml

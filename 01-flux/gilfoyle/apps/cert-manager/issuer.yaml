@@ -11,8 +11,5 @@ spec:
       name: letsencrypt-account-key
     solvers:
     - http01:
-        gatewayHTTPRoute:
-          parentRefs:
-          - kind: Gateway
-            name: gw-external
-            namespace: envoy-gateway
+        ingress:
+          class: haproxy

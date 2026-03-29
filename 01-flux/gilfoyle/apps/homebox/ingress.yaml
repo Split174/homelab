@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homebox
+  namespace: homebox
+  labels:
+    app: homebox
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+spec:
+  ingressClassName: haproxy
+  tls:
+    - hosts:
+        - "homebox.themiple.ru"
+      secretName: homebox-tls
+  rules:
+    - host: "homebox.themiple.ru"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homebox-svc
+                port:
+                  number: 80

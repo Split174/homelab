@@ -4,7 +4,7 @@ resources:
 - ./grafana
 - ./victoria-logs
 - ./local-path-storage
-- ./envoy-gateway
+#- ./envoy-gateway
 #- ./metallb
 - ./cert-manager
 - ./dynamic-dns
