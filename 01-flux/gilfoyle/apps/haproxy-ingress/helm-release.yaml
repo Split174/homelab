@@ -41,6 +41,7 @@ spec:
           - port: 443
             targetPort: https
             nodePort: 30443
+      defaultBackendService: honeypot/hellpot-service
       stats:
         enabled: true
       metrics:

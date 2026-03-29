@@ -1,0 +1,76 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: honeypot
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hellpot-config
+  namespace: honeypot
+data:
+  config.toml: |
+    [server]
+    bind_addr = "0.0.0.0"
+    bind_port = 8080
+    
+    [logger]
+    debug = false
+    log_file = "" 
+    
+    [performance]
+    chunk_size = 10000 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hellpot
+  namespace: honeypot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hellpot
+  template:
+    metadata:
+      labels:
+        app: hellpot
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+      containers:
+      - name: hellpot
+        image: ghcr.io/yunginnanet/hellpot:0.5.4
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/hellpot/
+      volumes:
+      - name: config-volume
+        configMap:
+          name: hellpot-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hellpot-service
+  namespace: honeypot
+spec:
+  selector:
+    app: hellpot
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080

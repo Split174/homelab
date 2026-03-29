@@ -16,3 +16,4 @@ resources:
 - ./immichman
 - ./homebox
 - ./haproxy-ingress
+- ./hellpot
