@@ -43,11 +43,16 @@ spec:
             nodePort: 30443
       defaultBackendService: honeypot/hellpot-service
       config:
-        peers-table-global: |
-          stick-table type ip size 1m expire 1h store gpc0
-        config-frontend: |
-          http-request track-sc0 src table peers-table-global if { path_beg /wp-admin/ }
-          http-request deny deny_status 403 if { path_beg /wp-admin/ } { sc_get_gpc0(peers-table-global) gt 0 }   
+        frontend-config-snippet: |
+            stick-table type ip size 100k expire 24h store gpc0
+
+            http-request track-sc0 src
+
+            acl bad_paths path -m beg -i /.git /.secrets /wp-admin /.env /bitrix
+
+            http-request sc-inc-gpc0(0) if bad_paths
+
+            http-request tarpit deny_status 418 if { sc0_get_gpc0 gt 0 }
       stats:
         enabled: true
       metrics:
