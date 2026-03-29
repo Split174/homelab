@@ -52,7 +52,7 @@ spec:
           acl bad_paths path -m beg -i /.env /.git /.secrets /wp-admin /bitrix
 
           http-request sc-inc-gpc0(0) if bad_paths
-          http-request tarpit deny_status 418 if { sc0_get_gpc0 gt 0 }
+          http-request tarpit deny_status 429 if { sc0_get_gpc0 gt 0 }
       stats:
         enabled: true
       metrics:
