@@ -1,0 +1,28 @@
+# Server
+base-url: https://ntfy.themiple.ru
+behind-proxy: true
+# Access control
+auth-file: /var/lib/ntfy/auth.db
+auth-default-access: deny-all
+auth-users:
+    - ntfyadmin:$2b$10$L00b0NGRGAk/HDF3FqrZqOQ1QO9K7FAw/q9wm6a.KNLvM/ItIa6cS:admin
+    - ntfyuser:$2b$10$TZS3m/7Vbn0hCX8DpgdtGetbZ8rRm.P34uilL6ts335BLDzrmaQTe:user
+enable-login: true
+require-login: true
+# Upstream
+upstream-base-url: https://ntfy.sh
+sops:
+    age:
+        - recipient: age1r3mx0sh3afe32wxjzvq9u6qvfzmwlzp7uhqxravjjlnyvpz6eufq9ae0f9
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBjVzhYdUVJaDQ2VEx2MDZM
+            VjN6MTJPREt6aFY3SW9KYkluWDZndFZodEZVCjY4S3I1RlFCcjVZYXBSRCttcU9R
+            REZLWnRXTHIwTjZ6ZEFiWWx2VnlxVXMKLS0tIGZObysxNHdoRHo4ZkFwMk42SDdq
+            RUxVaHVGWDF3ZktpLzBNZ2tuTDl2YWsKoLmq/E4VAf7pt8A3l0DTwnkDvKOMtbA1
+            7+y8JY6nRLcglULS5xGdrpWcWThXHdq8ynbWn8hUc6PZ2pZPd6VKeg==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-04-11T22:40:35Z"
+    mac: ENC[AES256_GCM,data:1fLs1bQeImol2VHWLH646yhx2NFs7A+BK/U8d1FzWv6INPD0aVGD6wmVigvMef7dM16goHYYNXk5QyKRSGriDG6DouCCkT+Ylqln4q/thCrIezIZ6Kbs6bgWcVJ6++WD7h0mQKt7p69cz8HBfYabW6+ClQ7LKOpmQo8NPkuI4xc=,iv:JHTieMwCcwG0KWwkFec14w0odX8bHC+E4R2f5pFMb3A=,tag:ruWqE2wNjEijIVRhlhG7ng==,type:str]
+    encrypted_regex: ^(data|stringData)$
+    version: 3.11.0
