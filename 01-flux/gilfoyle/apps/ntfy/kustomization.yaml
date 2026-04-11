@@ -6,8 +6,5 @@ resources:
   - svc.yaml
   - pvc.yaml
   - ingress.yaml
-configMapGenerator:
-    - name: server-config
-      files: 
-        - server.enc.yaml
+  - secret.enc.yaml
 namespace: ntfy

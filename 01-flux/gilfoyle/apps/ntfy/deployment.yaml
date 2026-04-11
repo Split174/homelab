@@ -45,8 +45,8 @@ spec:
               name: cache-volume
       volumes:
         - name: config-volume
-          configMap:
-            name: server-config
+          secret:
+            secretName: ntfy-server-secret
         - name: cache-volume
           persistentVolumeClaim:
             claimName: ntfy-pvc
