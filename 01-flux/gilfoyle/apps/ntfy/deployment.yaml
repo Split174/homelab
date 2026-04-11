@@ -27,7 +27,7 @@ spec:
             - name: NTFY_LOG_LEVEL
               value: INFO
             - name: NTFY_BASE_URL
-              value: ntfy.themiple.ru
+              value: https://ntfy.themiple.ru
           ports: 
             - containerPort: 80
               name: http-ntfy
