@@ -17,4 +17,4 @@ resources:
 - ./homebox
 - ./haproxy-ingress
 - ./hellpot
-- ./ntfy.sh
+- ./ntfy
