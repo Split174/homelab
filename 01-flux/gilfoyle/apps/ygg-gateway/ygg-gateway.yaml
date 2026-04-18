@@ -26,7 +26,7 @@ spec:
       containers:
         # 1. Yggdrasil оверлей
         - name: yggdrasil
-          image: ghcr.io/yggdrasil-network/yggdrasil-go:latest
+          image: ghcr.io/yggdrasil-network/yggdrasil-go:v0.5.13
           securityContext:
             capabilities:
               add: ["NET_ADMIN"]
@@ -39,7 +39,7 @@ spec:
               
         # 2. Менеджер пиров
         - name: ygg-manager
-          image: ghcr.io/split174/ygg-manager:latest
+          image: ghcr.io/split174/ygg-manager:v1.0.2
           env:
             - name: YGG_ENDPOINT
               value: "tcp://127.0.0.1:9001"
@@ -52,7 +52,7 @@ spec:
               
         # 3. GOST Форвардер
         - name: gost-client
-          image: mirror.gcr.io/ginuerzh/gost
+          image: mirror.gcr.io/ginuerzh/gost:v3.2.6
           env:
             - name: REMOTE_SOCKS
               valueFrom:
