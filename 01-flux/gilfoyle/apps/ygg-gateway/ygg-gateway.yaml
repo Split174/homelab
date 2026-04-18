@@ -45,6 +45,10 @@ spec:
               value: "tcp://127.0.0.1:9001"
             - name: MAX_PEERS
               value: "3"
+            - name: MAX_LATENCY_MS
+              value: "100"
+            - name: MAX_COST
+              value: "150"                            
               
         # 3. GOST Форвардер
         - name: gost-client
