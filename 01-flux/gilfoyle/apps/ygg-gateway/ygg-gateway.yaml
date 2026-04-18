@@ -52,7 +52,7 @@ spec:
               
         # 3. GOST Форвардер
         - name: gost-client
-          image: mirror.gcr.io/ginuerzh/gost:v3.2.6
+          image: mirror.gcr.io/ginuerzh/gost:v3.2
           env:
             - name: REMOTE_SOCKS
               valueFrom:
