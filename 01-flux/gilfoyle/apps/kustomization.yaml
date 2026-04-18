@@ -17,4 +17,5 @@ resources:
 - ./homebox
 - ./haproxy-ingress
 - ./hellpot
-- ./ntfy
+#- ./ntfy
+- ./ygg-gateway

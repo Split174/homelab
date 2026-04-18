@@ -1,0 +1,82 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ygg-gateway-conf
+  namespace: ygg-gateway
+data:
+  yggdrasil.conf: |
+    AdminListen: tcp://127.0.0.1:9001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ygg-gateway
+  namespace: ygg-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ygg-gateway
+  template:
+    metadata:
+      labels:
+        app: ygg-gateway
+    spec:
+      containers:
+        # 1. Yggdrasil оверлей
+        - name: yggdrasil
+          image: ghcr.io/yggdrasil-network/yggdrasil-go:latest
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN"]
+          volumeMounts:
+            - name: dev-tun
+              mountPath: /dev/net/tun
+            - name: conf
+              mountPath: /etc/yggdrasil-network/config.conf
+              subPath: yggdrasil.conf
+              
+        # 2. Менеджер пиров
+        - name: ygg-manager
+          image: ghcr.io/split174/ygg-manager:latest
+          env:
+            - name: YGG_ENDPOINT
+              value: "tcp://127.0.0.1:9001"
+            - name: MAX_PEERS
+              value: "3"
+              
+        # 3. GOST Форвардер
+        - name: gost-client
+          image: mirror.gcr.io/ginuerzh/gost
+          env:
+            - name: REMOTE_SOCKS
+              valueFrom:
+                secretKeyRef:
+                  name: ygg-gateway-secret
+                  key: REMOTE_SOCKS
+          args: 
+            - "-L=socks5://0.0.0.0:1080"
+            - "-F=$(REMOTE_SOCKS)"
+          ports:
+            - containerPort: 1080
+      volumes:
+        - name: dev-tun
+          hostPath:
+            path: /dev/net/tun
+        - name: conf
+          configMap:
+            name: ygg-gateway-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ygg-gateway
+  namespace: ygg-gateway
+spec:
+  selector:
+    app: ygg-gateway
+  ports:
+    - protocol: TCP
+      port: 1080
+      targetPort: 1080
