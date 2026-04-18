@@ -58,13 +58,13 @@ data:
         hooks:
           failure:
             - >-
-              curl -s -X POST -x "socks5h://ygg-gateway:1080" 
+              curl -s -X POST -x "socks5h://ygg-gateway.ygg-gateway:1080" 
               -d "chat_id=$TELEGRAM_CHAT_ID&text=❌ <b>Backup Failed!</b>%0A%0ALocation: $AUTORESTIC_LOCATION%0ACheck logs for details.&parse_mode=HTML" 
               "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"
 
           success:
             - >-
-              curl -s -X POST -x "socks5h://ygg-gateway:1080" 
+              curl -s -X POST -x "socks5h://ygg-gateway.ygg-gateway:1080" 
               -d "chat_id=$TELEGRAM_CHAT_ID&text=✅ <b>Backup Successful</b>%0A%0A📁 Location: $AUTORESTIC_LOCATION%0A📸 Snapshot: $AUTORESTIC_SNAPSHOT_ID_0%0A📊 Added Size: $AUTORESTIC_ADDED_SIZE_0%0A⏱ Duration: $AUTORESTIC_PROCESSED_DURATION_0&parse_mode=HTML" 
               "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage"
 
