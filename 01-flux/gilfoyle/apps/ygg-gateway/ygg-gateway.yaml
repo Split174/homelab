@@ -60,7 +60,7 @@ spec:
                   name: ygg-gateway-secret
                   key: REMOTE_SOCKS
           args: 
-            - "-L=socks5://0.0.0.0:1080"
+            - "-L=socks5://0.0.0.0:1080?limiter.in=1250KB&limiter.out=1250KB"
             - "-F=$(REMOTE_SOCKS)"
           ports:
             - containerPort: 1080
