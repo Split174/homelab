@@ -59,9 +59,13 @@ spec:
                 secretKeyRef:
                   name: ygg-gateway-secret
                   key: REMOTE_SOCKS
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          command: ["/bin/sh", "-c"]
           args: 
-            - "-L=socks5://0.0.0.0:1080?limiter.in=1250KB&limiter.out=1250KB"
-            - "-F=$(REMOTE_SOCKS)"
+            - "exec gost -L=socks5://$POD_IP:1080?limiter.in=1250KB\\&limiter.out=1250KB -F=$(REMOTE_SOCKS)"
           ports:
             - containerPort: 1080
       volumes:
