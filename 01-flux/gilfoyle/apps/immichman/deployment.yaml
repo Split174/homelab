@@ -24,3 +24,8 @@ spec:
           envFrom:
             - secretRef:
                 name: immichman-secret
+          env:
+            - name: HTTPS_PROXY
+              value: "socks5://ygg-gateway.ygg-gateway:1080"
+            - name: ALL_PROXY
+              value: "socks5://ygg-gateway.ygg-gateway:1080"                
