@@ -39,7 +39,7 @@ spec:
               
         # 2. Менеджер пиров
         - name: ygg-manager
-          image: ghcr.io/split174/ygg-manager:v1.0.2
+          image: ghcr.io/split174/ygg-manager:v1.0.1
           env:
             - name: YGG_ENDPOINT
               value: "tcp://127.0.0.1:9001"
