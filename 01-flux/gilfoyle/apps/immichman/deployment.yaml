@@ -20,7 +20,7 @@ spec:
       containers:
         - name: immichman
           image: ghcr.io/split174/immichman:master
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           envFrom:
             - secretRef:
                 name: immichman-secret
