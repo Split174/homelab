@@ -1,0 +1,93 @@
+---
+# PersistentVolumeClaim 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: databag-pvc
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi 
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: databag
+  labels:
+    app: databag
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: databag
+  template:
+    metadata:
+      labels:
+        app: databag
+    spec:
+      containers:
+        - name: databag
+          image: balzack/databag:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7000
+              name: http
+          env:
+            - name: ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: databag-secret
+                  key: admin-password
+          volumeMounts:
+            - name: databag-data
+              mountPath: /var/lib/databag
+      volumes:
+        - name: databag-data
+          persistentVolumeClaim:
+            claimName: databag-pvc
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: databag-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: databag
+  ports:
+    - protocol: TCP
+      port: 7000
+      targetPort: 7000
+
+---
+# Ingress 
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: databag-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+spec:
+  ingressClassName: haproxy
+  tls:
+    - hosts:
+        - bag.themiple.ru
+      secretName: databag-tls-secret
+  rules:
+    - host: bag.themiple.ru
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: databag-svc
+                port:
+                  number: 7000
