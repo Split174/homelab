@@ -28,6 +28,7 @@ spec:
                     "https://freedns.afraid.org/nic/update?hostname=${domain}&myip=${MY_IP}"
                   
                   echo ""
+                  sleep 10
                 done
             env:
             - name: DOMAINS
