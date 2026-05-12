@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kpo-viz-service
+spec:
+  type: ClusterIP
+  selector:
+    app: kpo-viz
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80

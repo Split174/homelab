@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kpo-viz-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kpo-viz
+  template:
+    metadata:
+      labels:
+        app: kpo-viz
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/split174/xpm-viz:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi

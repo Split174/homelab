@@ -20,3 +20,4 @@ resources:
 #- ./ntfy
 - ./ygg-gateway
 - ./databag
+- ./xmp-viz
