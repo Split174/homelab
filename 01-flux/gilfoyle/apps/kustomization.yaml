@@ -22,3 +22,4 @@ resources:
 - ./databag
 - ./xmp-viz
 - ./zot
+- ./reflector
