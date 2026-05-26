@@ -23,16 +23,16 @@ spec:
 
                 for domain in $(echo $DOMAINS | tr "," " "); do
                   echo "Updating domain: $domain"
-                  
+
                   curl -XGET -vk -u "${FREEDNS_USER}:${FREEDNS_PASS}" \
                     "https://freedns.afraid.org/nic/update?hostname=${domain}&myip=${MY_IP}"
-                  
+
                   echo ""
                   sleep 10
                 done
             env:
             - name: DOMAINS
-              value: "grafana.themiple.ru,pocketid.themiple.ru,immich.themiple.ru,homebox.themiple.ru,ntfy.themiple.ru,bag.themiple.ru"
+              value: "grafana.themiple.ru,pocketid.themiple.ru,immich.themiple.ru,homebox.themiple.ru,ntfy.themiple.ru,zot.themiple.ru,xpm.themiple.ru"
             - name: FREEDNS_USER
               valueFrom:
                 secretKeyRef:

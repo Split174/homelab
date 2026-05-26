@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: zot
+      version: "0.1.116"
       sourceRef:
         kind: HelmRepository
         name: zot
@@ -38,13 +39,12 @@ spec:
     ingress:
       enabled: true
       className: haproxy
+      path: /
       annotations:
         cert-manager.io/cluster-issuer: "letsencrypt"
       pathtype: Prefix
       hosts:
-        - host: zot.themiple.ru
-          paths:
-            - path: /
+        - zot.themiple.ru
       tls:
         - secretName: zot-tls
           hosts:
