@@ -21,3 +21,4 @@ resources:
 - ./ygg-gateway
 - ./databag
 - ./xmp-viz
+- ./zot

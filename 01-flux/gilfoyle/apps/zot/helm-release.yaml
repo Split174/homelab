@@ -1,0 +1,67 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zot
+  namespace: zot
+spec:
+  releaseName: zot
+  chart:
+    spec:
+      chart: zot
+      sourceRef:
+        kind: HelmRepository
+        name: zot
+        namespace: zot
+  interval: 15m
+  timeout: 5m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    replicaCount: 1
+    mountConfig: true
+    persistence: true
+    pvc:
+      storage: 20Gi
+      storageClassName: local-path
+      accessModes:
+        - ReadWriteOnce
+    strategy:
+      type: Recreate
+    service:
+      type: ClusterIP
+      port: 5000
+    ingress:
+      enabled: true
+      className: haproxy
+      annotations:
+        cert-manager.io/cluster-issuer: "letsencrypt"
+      pathtype: Prefix
+      hosts:
+        - host: zot.themiple.ru
+          paths:
+            - path: /
+      tls:
+        - secretName: zot-tls
+          hosts:
+            - zot.themiple.ru
+    configFiles:
+      config.json: |-
+        {
+          "storage": {
+            "rootDirectory": "/var/lib/registry"
+          },
+          "http": {
+            "address": "0.0.0.0",
+            "port": "5000",
+            "readTimeout": "300s",
+            "writeTimeout": "300s"
+          },
+          "log": {
+            "level": "info"
+          }
+        }
