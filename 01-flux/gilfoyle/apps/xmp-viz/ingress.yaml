@@ -8,10 +8,10 @@ spec:
   ingressClassName: haproxy
   tls:
     - hosts:
-        - xmp.themiple.ru
+        - xpm.themiple.ru
       secretName: xmp-themiple-ru-tls
   rules:
-    - host: xmp.themiple.ru
+    - host: xpm.themiple.ru
       http:
         paths:
           - path: /
