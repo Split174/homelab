@@ -61,6 +61,7 @@ spec:
             "port": "5000",
             "readTimeout": "300s",
             "writeTimeout": "300s",
+            "compat": ["docker2s2"],
             "auth": {
               "htpasswd": {
                 "path": "/secret/htpasswd"
