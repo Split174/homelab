@@ -1,0 +1,29 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: crossplane
+  namespace: crossplane-system
+spec:
+  releaseName: crossplane
+  chart:
+    spec:
+      chart: crossplane
+      version: "v2.3.1"
+      sourceRef:
+        kind: HelmRepository
+        name: crossplane-stable
+        namespace: crossplane-system
+  interval: 15m
+  timeout: 5m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    provider:
+      packages:
+        - xpkg.upbound.io/crossplane-contrib/provider-ansible:v0.8.0

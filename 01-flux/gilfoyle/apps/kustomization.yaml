@@ -7,6 +7,7 @@ resources:
 #- ./envoy-gateway
 #- ./metallb
 - ./cert-manager
+- ./crossplane
 - ./dynamic-dns
 - ./cloudnative-pg
 - ./immich
