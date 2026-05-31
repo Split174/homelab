@@ -5,10 +5,15 @@ metadata:
   namespace: crossplane-system
 spec:
   releaseName: crossplane
-  chartRef:
-    kind: HelmChart
-    name: crossplane
-    namespace: crossplane-system
+  chart:
+    spec:
+      chart: ./01-flux/gilfoyle/apps/crossplane/charts/crossplane
+      version: "v2.3.1"
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      interval: 60m
   interval: 15m
   timeout: 5m
   install:
