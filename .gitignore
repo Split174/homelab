@@ -2,3 +2,4 @@
 *secret*.yaml
 !*secret*.enc.yaml
 /.private-files
+!**/templates/secret.yaml
