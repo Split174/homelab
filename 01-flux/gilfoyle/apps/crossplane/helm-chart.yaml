@@ -8,5 +8,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+    namespace: flux-system
   interval: 60m
   version: "v2.3.1"
