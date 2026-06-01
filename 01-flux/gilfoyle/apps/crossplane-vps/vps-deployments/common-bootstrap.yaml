@@ -1,0 +1,90 @@
+apiVersion: ansible.crossplane.io/v1alpha1
+kind: AnsibleRun
+metadata:
+  name: vps-bootstrap
+  namespace: crossplane-system
+spec:
+  providerConfigRef:
+    name: ansible-vps-config
+  forProvider:
+    secrets:
+      - name: vps-secrets-and-inventory
+        namespace: crossplane-system
+
+    inventories:
+      - source: Secret
+        secretRef:
+          name: vps-secrets-and-inventory
+          namespace: crossplane-system
+          key: hosts.ini
+
+    playbookInline: |
+      - name: Basic VPS Bootstrap
+        hosts: vps_servers
+        gather_facts: yes
+        become: yes
+        tasks:
+          - name: Test connectivity
+            ping:
+
+          - name: Update apt cache
+            apt:
+              update_cache: yes
+              cache_valid_time: 3600
+
+          - name: Install prerequisites (ca-certificates, curl)
+            apt:
+              name:
+                - ca-certificates
+                - curl
+              state: present
+              update_cache: yes
+
+          - name: Install fail2ban
+            apt:
+              name: fail2ban
+              state: present
+              update_cache: yes
+
+          - name: Ensure fail2ban is enabled and started
+            service:
+              name: fail2ban
+              state: started
+              enabled: yes
+
+          - name: Create /etc/apt/keyrings directory
+            file:
+              path: /etc/apt/keyrings
+              state: directory
+              mode: '0755'
+
+          - name: Download Docker official GPG key
+            get_url:
+              url: https://download.docker.com/linux/ubuntu/gpg
+              dest: /etc/apt/keyrings/docker.asc
+              mode: '0644'
+              force: false
+
+          - name: Get dpkg architecture
+            command: dpkg --print-architecture
+            register: dpkg_arch
+            changed_when: false
+            check_mode: false
+
+          - name: Add Docker apt repository
+            apt_repository:
+              repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+              filename: docker
+              state: present
+              update_cache: yes
+
+          - name: Install Docker Engine and Compose plugin
+            apt:
+              name:
+                - docker-ce
+                - docker-ce-cli
+                - containerd.io
+                - docker-buildx-plugin
+                - docker-compose-plugin
+              state: present
+              update_cache: yes

@@ -1,0 +1,127 @@
+apiVersion: ansible.crossplane.io/v1alpha1
+kind: AnsibleRun
+metadata:
+  name: ygg-node
+  namespace: crossplane-system
+spec:
+  providerConfigRef:
+    name: ansible-vps-config
+  forProvider:
+    secrets:
+      - name: vps-secrets-and-inventory
+        namespace: crossplane-system
+
+    inventories:
+      - source: Secret
+        secretRef:
+          name: vps-secrets-and-inventory
+          namespace: crossplane-system
+          key: hosts.ini
+
+    playbookInline: |
+      - name: Deploy Yggdrasil node on VPS
+        hosts: ygg_vps
+        gather_facts: yes
+        become: yes
+        tasks:
+          - name: Create /root/ygg/conf directory
+            file:
+              path: /root/ygg/conf
+              state: directory
+              mode: '0755'
+
+          - name: Deploy yggdrasil.conf
+            copy:
+              dest: /root/ygg/conf/yggdrasil.conf
+              mode: '0644'
+              content: |
+                {
+                  "AdminListen": "tcp://0.0.0.0:9001",
+                  "PrivateKey": "{{ lookup('file', '/tmp/ansible/secrets/ygg_private_key') }}",
+                  "Peers": [
+                    "tls://23.137.249.65:444",
+                    "tls://cirno.nadeko.net:44442"
+                  ],
+                  "InterfacePeers": {},
+                  "Listen": [],
+                  "MulticastInterfaces": [
+                    {
+                      "Regex": ".*",
+                      "Beacon": true,
+                      "Listen": true,
+                      "Password": ""
+                    }
+                  ],
+                  "AllowedPublicKeys": [],
+                  "IfName": "auto",
+                  "IfMTU": 65535,
+                  "NodeInfoPrivacy": false,
+                  "NodeInfo": {}
+                }
+
+          - name: Deploy docker-compose.yml
+            copy:
+              dest: /root/ygg/docker-compose.yml
+              mode: '0644'
+              content: |
+                version: '3.8'
+
+                services:
+                  yggdrasil:
+                    image: ghcr.io/yggdrasil-network/yggdrasil-go:latest
+                    container_name: yggdrasil
+                    restart: unless-stopped
+                    cap_add:
+                      - NET_ADMIN
+                    sysctls:
+                      - net.ipv6.conf.all.disable_ipv6=0
+                      - net.ipv6.conf.default.disable_ipv6=0
+                    devices:
+                      - /dev/net/tun
+                    volumes:
+                      - ./conf/yggdrasil.conf:/etc/yggdrasil-network/config.conf
+                    ports:
+                      - "1080:1080"
+                    logging:
+                      driver: "json-file"
+                      options:
+                        max-size: "50m"
+                        max-file: "3"
+
+                  socks5:
+                    image: mirror.gcr.io/ginuerzh/gost
+                    container_name: socks5_ygg
+                    restart: unless-stopped
+                    network_mode: "service:yggdrasil"
+                    command: -L=socks5://{{ lookup('file', '/tmp/ansible/secrets/ygg_socks_pass') }}@:1080
+                    depends_on:
+                      - yggdrasil
+                    logging:
+                      driver: "json-file"
+                      options:
+                        max-size: "50m"
+                        max-file: "3"
+
+                  ygg-manager:
+                    image: ghcr.io/split174/ygg-manager:latest
+                    container_name: ygg-manager
+                    restart: unless-stopped
+                    environment:
+                      - YGG_ENDPOINT=tcp://yggdrasil:9001
+                      - MAX_PEERS=3
+                      - MAX_LATENCY_MS=150
+                      - MAX_COST=250.0
+                      - PEER_COUNTRY=
+                    depends_on:
+                      - yggdrasil
+                    logging:
+                      driver: "json-file"
+                      options:
+                        max-size: "50m"
+                        max-file: "3"
+
+          - name: Pull and bring up the stack
+            community.docker.docker_compose_v2:
+              project_src: /root/ygg
+              pull: missing
+              state: present

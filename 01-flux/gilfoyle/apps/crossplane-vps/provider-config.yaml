@@ -1,0 +1,8 @@
+apiVersion: ansible.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: ansible-vps-config
+spec:
+  env:
+    - name: ANSIBLE_HOST_KEY_CHECKING
+      value: "False"
