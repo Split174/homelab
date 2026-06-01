@@ -10,18 +10,3 @@ spec:
         name: vps-secrets-and-inventory
         namespace: crossplane-system
         key: id_rsa
-    - source: Secret
-      filename: /tmp/ygg_socks_pass
-      secretRef:
-        name: vps-secrets-and-inventory
-        namespace: crossplane-system
-        key: ygg_socks_pass
-    - source: Secret
-      filename: /tmp/ygg_private_key
-      secretRef:
-        name: vps-secrets-and-inventory
-        namespace: crossplane-system
-        key: ygg_private_key
-  env:
-    - name: ANSIBLE_HOST_KEY_CHECKING
-      value: "False"
