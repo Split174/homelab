@@ -27,4 +27,4 @@ spec:
   values:
     provider:
       packages:
-        - mirror.gcr.io/crossplane-contrib/provider-ansible:v0.8.0
+        - zot.themiple.ru/crossplane-contrib/provider-ansible:v0.8.0
