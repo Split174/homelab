@@ -27,4 +27,4 @@ spec:
   values:
     provider:
       packages:
-        - zot.themiple.ru/crossplane-contrib/provider-ansible:v0.8.0
+        - xpkg.upbound.io/crossplane-contrib/provider-ansible:v0.8.0
