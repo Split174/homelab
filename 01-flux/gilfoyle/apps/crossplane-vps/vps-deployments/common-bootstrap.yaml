@@ -56,7 +56,7 @@ spec:
 
           - name: Download Docker official GPG key
             get_url:
-              url: https://download.docker.com/linux/ubuntu/gpg
+              url: https://download.docker.com/linux/debian/gpg
               dest: /etc/apt/keyrings/docker.asc
               mode: '0644'
               force: false
@@ -69,7 +69,7 @@ spec:
 
           - name: Add Docker apt repository
             apt_repository:
-              repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+              repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable"
               filename: docker
               state: present
               update_cache: yes
