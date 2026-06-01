@@ -9,7 +9,10 @@
 			"remote": false,
 			"command": "/home/serj/my-pets/flux-mcp-server/kube-flux-mcp",
 			"args": [],
-			"env": { "KUBECONFIG": ".private-files/gilfoyle.yaml" },
+			"env": {
+				"KUBECONFIG": ".private-files/gilfoyle.yaml",
+				"PROJECT_ROOT": ".",
+			},
 		},
 	},
 }

@@ -5,19 +5,19 @@ metadata:
 spec:
   credentials:
     - source: Secret
-      filename: /tmp/id_rsa
+      filename: /secrets/id_rsa
       secretRef:
         name: vps-secrets-and-inventory
         namespace: crossplane-system
         key: id_rsa
     - source: Secret
-      filename: /tmp/ygg_socks_pass
+      filename: /secrets/ygg_socks_pass
       secretRef:
         name: vps-secrets-and-inventory
         namespace: crossplane-system
         key: ygg_socks_pass
     - source: Secret
-      filename: /tmp/ygg_private_key
+      filename: /secrets/ygg_private_key
       secretRef:
         name: vps-secrets-and-inventory
         namespace: crossplane-system
