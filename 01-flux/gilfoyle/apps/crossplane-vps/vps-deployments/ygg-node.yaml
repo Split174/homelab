@@ -20,7 +20,7 @@ spec:
 
     playbookInline: |
       - name: Deploy Yggdrasil node on VPS
-        hosts: ygg_vps
+        hosts: ygg-vps
         gather_facts: yes
         become: yes
         tasks:
