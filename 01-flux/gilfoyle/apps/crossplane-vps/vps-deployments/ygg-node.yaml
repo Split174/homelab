@@ -7,10 +7,6 @@ spec:
   providerConfigRef:
     name: ansible-vps-config
   forProvider:
-    secrets:
-      - name: vps-secrets-and-inventory
-        namespace: crossplane-system
-
     inventories:
       - source: Secret
         secretRef:
