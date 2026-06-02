@@ -37,7 +37,7 @@ spec:
               content: |
                 {
                   "AdminListen": "tcp://0.0.0.0:9001",
-                  "PrivateKey": "{{ lookup('file', '/tmp/ansible/secrets/ygg_private_key') }}",
+                  "PrivateKey": "{{ lookup('file', 'ygg_private_key') }}",
                   "Peers": [
                     "tls://23.137.249.65:444",
                     "tls://cirno.nadeko.net:44442"
@@ -93,7 +93,7 @@ spec:
                     container_name: socks5_ygg
                     restart: unless-stopped
                     network_mode: "service:yggdrasil"
-                    command: -L=socks5://{{ lookup('file', '/tmp/ansible/secrets/ygg_socks_pass') }}@:1080
+                    command: -L=socks5://{{ lookup('file', 'ygg_socks_pass') }}@:1080
                     depends_on:
                       - yggdrasil
                     logging:

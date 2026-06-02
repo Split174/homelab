@@ -5,4 +5,4 @@ resources:
   - secret.enc.yaml
   - provider-config.yaml
   - vps-deployments/common-bootstrap.yaml
-#  - vps-deployments/ygg-node.yaml
+  - vps-deployments/ygg-node.yaml
