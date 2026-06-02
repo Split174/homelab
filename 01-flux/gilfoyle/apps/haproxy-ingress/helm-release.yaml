@@ -45,11 +45,14 @@ spec:
       config:
         config-frontend: |
           stick-table type ip size 100k expire 24h store gpc0
-          
+
           http-request track-sc0 req.hdr(X-Forwarded-For,-1) if { req.hdr(X-Forwarded-For) -m found }
           http-request track-sc0 src if !{ req.hdr(X-Forwarded-For) -m found }
 
-          acl bad_paths path -m beg -i /.env /.git /.secrets /wp-admin /bitrix
+          acl bad_paths path -m beg -i /.env /.git /.svn /.ssh /.aws /.secrets /.htpasswd /id_rsa
+          acl bad_paths path -m beg -i /wp-admin /wp-login.php /xmlrpc.php /bitrix /administrator /phpmyadmin /adminer
+          acl bad_paths path -m beg -i /vendor /phpinfo /info.php /test.php /eval-stdin /_profiler
+          acl bad_paths path -m beg -i /setup.cgi /boaform /cgi-bin /GponForm /HNAP1 /actuator /solr
 
           http-request sc-inc-gpc0(0) if bad_paths
           http-request tarpit deny_status 429 if { sc0_get_gpc0 gt 0 }
