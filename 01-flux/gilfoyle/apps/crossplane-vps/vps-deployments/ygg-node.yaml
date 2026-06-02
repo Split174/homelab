@@ -97,7 +97,7 @@ spec:
                       options:
                         max-size: "50m"
                         max-file: "3"
-
+                  ### test
                   ygg-manager:
                     image: ghcr.io/split174/ygg-manager:latest
                     container_name: ygg-manager
