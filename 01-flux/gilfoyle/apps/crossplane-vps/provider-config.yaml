@@ -22,3 +22,15 @@ spec:
         name: vps-secrets-and-inventory
         namespace: crossplane-system
         key: ygg_private_key
+    - source: Secret
+      filename: telemt_user_sprinthost
+      secretRef:
+        name: vps-secrets-and-inventory
+        namespace: crossplane-system
+        key: telemt_user_sprinthost
+    - source: Secret
+      filename: telemt_pass_sprinthost
+      secretRef:
+        name: vps-secrets-and-inventory
+        namespace: crossplane-system
+        key: telemt_pass_sprinthost
