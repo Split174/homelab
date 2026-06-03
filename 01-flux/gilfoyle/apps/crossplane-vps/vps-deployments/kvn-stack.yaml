@@ -69,8 +69,7 @@ spec:
               dest: "{{ stack_dir }}/entrypoint.sh"
               mode: '0755'
               content: |
-                {% raw %}
-                #!/bin/bash
+                {% raw %}#!/bin/bash
                 set -e
 
                 mkdir -p /var/run/wireguard
@@ -78,15 +77,21 @@ spec:
                 echo "[INFO] Запуск интерфейса amneziawg-go wg0..."
                 amneziawg-go wg0
 
-                sleep 2
+                echo "[INFO] Ожидание интерфейса wg0..."
+                for i in $(seq 1 30); do
+                    if ip link show wg0 >/dev/null 2>&1; then
+                        echo "[INFO] Интерфейс wg0 поднят."
+                        break
+                    fi
+                    sleep 1
+                done
 
                 echo "[INFO] Инициализация конфигов и файрвола (jwg)..."
-                jwg
+                jwg || echo "[WARN] jwg вернул ненулевой код, продолжаем..."
 
                 echo "[INFO] AmneziaWG готов к работе!"
 
-                tail -f /dev/null
-                {% endraw %}
+                tail -f /dev/null{% endraw %}
 
           # ==========================================
           # nginx.conf (SNI-proxy)
