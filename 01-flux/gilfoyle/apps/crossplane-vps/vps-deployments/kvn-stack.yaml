@@ -1,0 +1,352 @@
+apiVersion: ansible.crossplane.io/v1alpha1
+kind: AnsibleRun
+metadata:
+  name: kvn-stack
+  namespace: crossplane-system
+spec:
+  providerConfigRef:
+    name: ansible-vps-config
+  forProvider:
+    inventories:
+      - source: Secret
+        secretRef:
+          name: vps-secrets-and-inventory
+          namespace: crossplane-system
+          key: hosts.ini
+
+    playbookInline: |
+      - name: Deploy KVN digital resistance stack on VPS
+        hosts: kvn-stack-sprinthost
+        gather_facts: yes
+        become: yes
+        vars:
+          stack_dir: /root/kvn-stack
+        tasks:
+          - name: Create stack directory
+            file:
+              path: "{{ stack_dir }}"
+              state: directory
+              mode: '0755'
+
+          # ==========================================
+          # Dockerfile
+          # ==========================================
+          - name: Deploy Dockerfile
+            copy:
+              dest: "{{ stack_dir }}/Dockerfile"
+              mode: '0644'
+              content: |
+                {% raw %}
+                FROM debian:bookworm-slim
+
+                RUN apt-get update && apt-get install -y --no-install-recommends \
+                    wget \
+                    ca-certificates \
+                    iproute2 \
+                    nftables \
+                    iptables \
+                    && rm -rf /var/lib/apt/lists/*
+
+                WORKDIR /usr/local/bin
+
+                RUN wget https://raw.githubusercontent.com/Jipok/jwg/refs/heads/master/amneziawg-go && \
+                    chmod +x amneziawg-go
+
+                RUN wget https://github.com/Jipok/jwg/releases/latest/download/jwg && \
+                    chmod +x jwg
+
+                COPY entrypoint.sh /entrypoint.sh
+                RUN chmod +x /entrypoint.sh
+
+                ENTRYPOINT ["/entrypoint.sh"]
+                {% endraw %}
+
+          # ==========================================
+          # entrypoint.sh
+          # ==========================================
+          - name: Deploy entrypoint.sh
+            copy:
+              dest: "{{ stack_dir }}/entrypoint.sh"
+              mode: '0755'
+              content: |
+                {% raw %}
+                #!/bin/bash
+                set -e
+
+                mkdir -p /var/run/wireguard
+
+                echo "[INFO] Запуск интерфейса amneziawg-go wg0..."
+                amneziawg-go wg0
+
+                sleep 2
+
+                echo "[INFO] Инициализация конфигов и файрвола (jwg)..."
+                jwg
+
+                echo "[INFO] AmneziaWG готов к работе!"
+
+                tail -f /dev/null
+                {% endraw %}
+
+          # ==========================================
+          # nginx.conf (SNI-proxy)
+          # ==========================================
+          - name: Deploy nginx.conf
+            copy:
+              dest: "{{ stack_dir }}/nginx.conf"
+              mode: '0644'
+              content: |
+                {% raw %}
+                worker_processes auto;
+
+                events {
+                    worker_connections 4096;
+                }
+
+                stream {
+                    resolver 8.8.8.8 1.1.1.1 ipv6=off valid=300s;
+
+                    map $ssl_preread_server_name $target_backend {
+                        default   $ssl_preread_server_name:443;
+                        ""        127.0.0.1:65535;
+                    }
+
+                    server {
+                        listen 10.8.0.1:443;
+                        ssl_preread on;
+                        proxy_connect_timeout 5s;
+                        proxy_timeout 60s;
+                        proxy_pass $target_backend;
+                    }
+                }
+
+                http {
+                    resolver 8.8.8.8 1.1.1.1 ipv6=off valid=300s;
+
+                    server {
+                        listen 10.8.0.1:80;
+
+                        if ($http_host = "") {
+                            return 400;
+                        }
+
+                        location / {
+                            proxy_connect_timeout 5s;
+                            proxy_send_timeout 60s;
+                            proxy_read_timeout 60s;
+                            proxy_pass http://$host$request_uri;
+                            proxy_set_header Host $http_host;
+                            proxy_set_header X-Real-IP $remote_addr;
+                        }
+                    }
+                }
+                {% endraw %}
+
+          # ==========================================
+          # Corefile (CoreDNS)
+          # ==========================================
+          - name: Deploy Corefile
+            copy:
+              dest: "{{ stack_dir }}/Corefile"
+              mode: '0644'
+              content: |
+                {% raw %}
+                (common_config) {
+                    errors
+                    cache 3600
+                }
+
+                ru xn--p1ai {
+                    import common_config
+                    forward . 1.1.1.1 8.8.8.8
+                }
+
+                vk.com vk.ru vk.company vk.design vk.link vk.me vk.cc userapi.com vkuser.net vk-portal.net vkuseraudio.net vkuseraudio.ru vkusercdn.ru vkuserlive.net vkuserphoto.ru vkuservideo.com vkuservideo.net vkuservideo.ru vkvideo.ru vk-cdn.me vk-cdn.net vk-cdn.ru vk-apps.com vk-apps.ru vk-analytics.ru vkcloud-static.ru mradx.net mvk.com {
+                    import common_config
+                    forward . 1.1.1.1 8.8.8.8
+                }
+
+                ipinfo.io ipwhois.io ifconfig.me ipify.org ip-api.com check-host.net {
+                    import common_config
+                    forward . 1.1.1.1 8.8.8.8
+                }
+
+                . {
+                    errors
+
+                    template IN A {
+                        match ".*"
+                        answer "{{ .Name }} 60 IN A 10.8.0.1"
+                    }
+
+                    template IN AAAA {
+                        match ".*"
+                        rcode NOERROR
+                    }
+
+                    template ANY ANY {
+                        match ".*"
+                        rcode NOERROR
+                    }
+                }
+                {% endraw %}
+
+          # ==========================================
+          # telemt.toml (секреты подставляются вне raw)
+          # ==========================================
+          - name: Deploy telemt.toml
+            copy:
+              dest: "{{ stack_dir }}/telemt.toml"
+              mode: '0644'
+              content: |
+                {% raw %}
+                [general]
+                use_middle_proxy = true
+                log_level = "normal"
+
+                [general.modes]
+                classic = false
+                secure = false
+                tls = true
+
+                [general.links]
+                show = "*"
+
+                [server]
+                port = 4443
+                metrics_port = 9090
+                metrics_whitelist = ["127.0.0.1", "::1", "0.0.0.0/0"]
+
+                [server.api]
+                enabled = true
+                listen = "0.0.0.0:9091"
+                whitelist = ["127.0.0.0/8", "172.17.0.1/16"]
+                minimal_runtime_enabled = false
+                minimal_runtime_cache_ttl_ms = 1000
+
+                [[server.listeners]]
+                ip = "0.0.0.0"
+
+                [censorship]
+                tls_domain = "2ip.ru"
+                mask = true
+                tls_emulation = true
+                tls_front_dir = "tlsfront"
+
+                [access.users]
+                {% endraw %}
+                {{ lookup('file', 'telemt_user_sprinthost') }} = "{{ lookup('file', 'telemt_pass_sprinthost') }}"
+
+          # ==========================================
+          # docker-compose.yml
+          # ==========================================
+          - name: Deploy docker-compose.yml
+            copy:
+              dest: "{{ stack_dir }}/docker-compose.yml"
+              mode: '0644'
+              content: |
+                {% raw %}
+                version: '3.8'
+
+                services:
+                  amnezia-wg:
+                    build: .
+                    container_name: jwg-server
+                    restart: unless-stopped
+                    cap_add:
+                      - NET_ADMIN
+                      - SYS_MODULE
+                    sysctls:
+                      - net.ipv4.ip_forward=1
+                    devices:
+                      - /dev/net/tun:/dev/net/tun
+                    tty: true
+                    stdin_open: true
+                    ports:
+                      - "51234:51234/udp"
+                    volumes:
+                      - ./data-jwg:/var/lib/jwg
+                    environment:
+                      - TZ=Europe/Moscow
+                    logging:
+                      options:
+                        max-size: "200m"
+                        max-file: "3"
+
+                  coredns:
+                    image: coredns/coredns:latest
+                    container_name: coredns
+                    restart: unless-stopped
+                    network_mode: "service:amnezia-wg"
+                    volumes:
+                      - ./Corefile:/Corefile:ro
+                    command: -conf /Corefile
+                    depends_on:
+                      - amnezia-wg
+                    logging:
+                      options:
+                        max-size: "200m"
+                        max-file: "3"
+
+                  sni-proxy:
+                    image: nginx:alpine
+                    container_name: sni-proxy
+                    restart: unless-stopped
+                    network_mode: "service:amnezia-wg"
+                    volumes:
+                      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+                    depends_on:
+                      - amnezia-wg
+                    logging:
+                      options:
+                        max-size: "200m"
+                        max-file: "3"
+
+                  telemt:
+                    image: whn0thacked/telemt-docker:latest
+                    container_name: telemt
+                    restart: unless-stopped
+                    environment:
+                      RUST_LOG: "info"
+                    volumes:
+                      - ./telemt.toml:/etc/telemt.toml:ro
+                    ports:
+                      - "4443:4443/tcp"
+                      - "127.0.0.1:9090:9090/tcp"
+                    security_opt:
+                      - no-new-privileges:true
+                    cap_drop:
+                      - ALL
+                    cap_add:
+                      - NET_BIND_SERVICE
+                    read_only: true
+                    tmpfs:
+                      - /tmp:rw,nosuid,nodev,noexec,size=16m
+                    deploy:
+                      resources:
+                        limits:
+                          cpus: "0.50"
+                          memory: 256M
+                        reservations:
+                          cpus: "0.25"
+                          memory: 128M
+                    ulimits:
+                      nofile:
+                        soft: 65536
+                        hard: 65536
+                    logging:
+                      driver: json-file
+                      options:
+                        max-size: "10m"
+                        max-file: "3"
+                {% endraw %}
+
+          # ==========================================
+          # Сборка и запуск стэка
+          # ==========================================
+          - name: Build and bring up the stack
+            community.docker.docker_compose_v2:
+              project_src: "{{ stack_dir }}"
+              build: policy
+              pull: missing
+              state: present

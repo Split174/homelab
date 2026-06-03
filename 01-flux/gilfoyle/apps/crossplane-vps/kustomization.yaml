@@ -6,3 +6,4 @@ resources:
   - provider-config.yaml
   - vps-deployments/common-bootstrap.yaml
   - vps-deployments/ygg-node.yaml
+  - vps-deployments/kvn-stack.yaml

@@ -28,11 +28,12 @@ spec:
               update_cache: yes
               cache_valid_time: 3600
 
-          - name: Install prerequisites (ca-certificates, curl)
+          - name: Install prerequisites
             apt:
               name:
                 - ca-certificates
                 - curl
+                - ncurses-term
               state: present
               update_cache: yes
 
