@@ -1,0 +1,6 @@
+pre-commit:
+  parallel: true
+  commands:
+    check-sops:
+      glob: "*.{yaml,yml}"
+      run: ./scripts/check-sops.sh {staged_files}
