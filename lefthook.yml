@@ -2,5 +2,5 @@ pre-commit:
   parallel: true
   commands:
     check-sops:
-      glob: "*.{yaml,yml}"
+      glob: "**/*.{yaml,yml}"
       run: bash ./scripts/check-sops.sh {staged_files}
