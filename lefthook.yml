@@ -3,4 +3,4 @@ pre-commit:
   commands:
     check-sops:
       glob: "*.{yaml,yml}"
-      run: ./scripts/check-sops.sh {staged_files}
+      run: bash ./scripts/check-sops.sh {staged_files}
