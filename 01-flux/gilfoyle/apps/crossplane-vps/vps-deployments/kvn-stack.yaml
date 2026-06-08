@@ -219,6 +219,7 @@ spec:
 
                 [server]
                 port = 4443
+                client_mss = "tspu"
                 metrics_port = 9090
                 metrics_whitelist = ["127.0.0.1", "::1", "0.0.0.0/0"]
 
