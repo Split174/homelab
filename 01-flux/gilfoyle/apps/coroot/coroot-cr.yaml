@@ -11,9 +11,8 @@ spec:
     host: coroot.themiple.ru
     annotations:
       cert-manager.io/cluster-issuer: "letsencrypt"
-      haproxy-ingress.github.io/auth-url: "svc://oauth2-proxy:4180/auth"
-      haproxy-ingress.github.io/auth-signin: "https://coroot.themiple.ru/oauth2/sign_in?rd=%[path]"
-      haproxy-ingress.github.io/auth-headers-succeed: "X-Auth-Request-Email"
+      haproxy-ingress.github.io/oauth: "oauth2_proxy"
+      haproxy-ingress.github.io/oauth-uri-prefix: "/oauth2"
     tls:
       hosts:
         - coroot.themiple.ru
