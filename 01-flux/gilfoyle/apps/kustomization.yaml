@@ -25,4 +25,5 @@ resources:
 - ./xmp-viz
 - ./zot
 - ./reflector
+- ./coroot-operator
 - ./coroot
