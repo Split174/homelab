@@ -1,0 +1,90 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: coroot
+  labels:
+    app: oauth2-proxy
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.8.1
+          args:
+            - --provider=oidc
+            - --oidc-issuer-url=https://pocketid.themiple.ru
+            - --email-domain=*
+            - --upstream=static://200
+            - --http-address=0.0.0.0:4180
+            - --redirect-url=https://coroot.themiple.ru/oauth2/callback
+            - --reverse-proxy=true
+            - --set-xauthrequest=true
+            - --cookie-secure=true
+            - --scope=openid email profile
+            - --skip-provider-button=true
+            - --cookie-refresh=1h
+            - --cookie-expire=24h
+            - --session-store-type=cookie
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy-secret
+                  key: client-id
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy-secret
+                  key: client-secret
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy-secret
+                  key: cookie-secret
+          ports:
+            - containerPort: 4180
+              name: http
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "64Mi"
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  namespace: coroot
+  labels:
+    app: oauth2-proxy
+spec:
+  selector:
+    app: oauth2-proxy
+  ports:
+    - name: http
+      port: 4180
+      targetPort: 4180
