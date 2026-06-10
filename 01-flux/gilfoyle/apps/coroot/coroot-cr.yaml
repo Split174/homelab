@@ -1,0 +1,31 @@
+---
+apiVersion: coroot.com/v1
+kind: Coroot
+metadata:
+  name: coroot
+  namespace: coroot
+spec:
+  authAnonymousRole: Admin
+  ingress:
+    className: haproxy
+    host: coroot.themiple.ru
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt"
+    tls:
+      hosts:
+        - coroot.themiple.ru
+      secretName: coroot-tls
+  storage:
+    size: 10Gi
+    className: local-path
+  prometheus:
+    storage:
+      size: 10Gi
+      className: local-path
+    retention: 7d
+  clickhouse:
+    shards: 1
+    replicas: 1
+    storage:
+      size: 20Gi
+      className: local-path
