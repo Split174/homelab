@@ -32,6 +32,7 @@ spec:
             - --set-xauthrequest=true
             - --cookie-secure=true
             - --scope=openid email profile
+            - --insecure-oidc-allow-unverified-email=true
             - --skip-provider-button=true
             - --cookie-refresh=1h
             - --cookie-expire=24h
