@@ -6,6 +6,9 @@ metadata:
   namespace: coroot
 spec:
   authAnonymousRole: Admin
+  tracesTTL: 7d
+  logsTTL: 7d
+  profilesTTL: 7d
   ingress:
     className: haproxy
     host: coroot.themiple.ru
@@ -24,7 +27,7 @@ spec:
     storage:
       size: 10Gi
       className: local-path
-    retention: 7d
+    retention: 14d
   clickhouse:
     shards: 1
     replicas: 1
