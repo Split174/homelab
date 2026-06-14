@@ -111,7 +111,7 @@ spec:
           #  8. ПРАВИЛА БАНА
           # ============================================================
           acl is_banned  sc0_get_gpc0 gt 0
-          acl rate_abuse sc0_http_req_rate gt 100
+          acl rate_abuse sc0_http_req_rate gt 300
           acl err_abuse  sc0_http_err_rate gt 25
 
           # Кто агрессивно ошибается (брутфорс 404) — рвём молча, экономим ресурсы
