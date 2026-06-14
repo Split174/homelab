@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: immichman
-          image: ghcr.io/split174/immichman:pr-1
+          image: ghcr.io/split174/immichman:v1.0.0
           imagePullPolicy: Always
           envFrom:
             - secretRef:
