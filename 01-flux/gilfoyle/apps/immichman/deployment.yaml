@@ -8,7 +8,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate 
+    type: Recreate
   selector:
     matchLabels:
       app: immichman
@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: immichman
-          image: ghcr.io/split174/immichman:master
+          image: ghcr.io/split174/immichman:pr-1
           imagePullPolicy: Always
           envFrom:
             - secretRef:
@@ -28,4 +28,4 @@ spec:
             - name: HTTPS_PROXY
               value: "socks5://ygg-gateway.ygg-gateway:1080"
             - name: ALL_PROXY
-              value: "socks5://ygg-gateway.ygg-gateway:1080"                
+              value: "socks5://ygg-gateway.ygg-gateway:1080"
