@@ -18,21 +18,30 @@ spec:
             command: ["/bin/sh", "-c"]
             args:
               - |
+                DOMAIN="homelab.themiple.ru"
+
                 MY_IP=$(curl -s ifconfig.me)
-                echo "Detected IP: $MY_IP"
+                echo "Detected public IP: $MY_IP"
 
-                for domain in $(echo $DOMAINS | tr "," " "); do
-                  echo "Updating domain: $domain"
+                # Resolve current DNS record for the domain
+                CURRENT_IP=$(getent hosts "$DOMAIN" | awk '{print $1}')
+                if [ -z "$CURRENT_IP" ]; then
+                  echo "WARNING: Could not resolve $DOMAIN via getent, trying nslookup..."
+                  CURRENT_IP=$(nslookup "$DOMAIN" 2>/dev/null | awk '/^Address: / { print $2 }' | tail -1)
+                fi
+                echo "DNS currently resolves to: $CURRENT_IP"
 
-                  curl -XGET -vk -u "${FREEDNS_USER}:${FREEDNS_PASS}" \
-                    "https://freedns.afraid.org/nic/update?hostname=${domain}&myip=${MY_IP}"
+                if [ "$MY_IP" = "$CURRENT_IP" ]; then
+                  echo "IP unchanged, skipping update"
+                  exit 0
+                fi
 
-                  echo ""
-                  sleep 10
-                done
+                echo "IP changed from $CURRENT_IP to $MY_IP, updating freedns..."
+                curl -XGET -vk -u "${FREEDNS_USER}:${FREEDNS_PASS}" \
+                  "https://freedns.afraid.org/nic/update?hostname=${DOMAIN}&myip=${MY_IP}"
             env:
-            - name: DOMAINS
-              value: "grafana.themiple.ru,pocketid.themiple.ru,immich.themiple.ru,homebox.themiple.ru,zot.themiple.ru,xpm.themiple.ru,coroot.themiple.ru"
+            - name: DOMAIN
+              value: "homelab.themiple.ru"
             - name: FREEDNS_USER
               valueFrom:
                 secretKeyRef:
