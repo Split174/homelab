@@ -5,14 +5,13 @@ metadata:
   namespace: backup-critical-data
 spec:
   schedule: "0 3 * * *"
-  concurrencyPolicy: Forbid 
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
         spec:
           securityContext:
             runAsUser: 0
-            privileged: true 
           containers:
             - name: autorestic
               image: cupcakearmy/autorestic:1.8.3
@@ -32,7 +31,7 @@ spec:
                   subPath: id_rsa
                 - name: config
                   mountPath: /root/.ssh/config
-                  subPath: ssh-config                  
+                  subPath: ssh-config
           restartPolicy: OnFailure
           volumes:
             - name: host-storage
