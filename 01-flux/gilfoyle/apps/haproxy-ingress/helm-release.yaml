@@ -82,7 +82,7 @@ spec:
           acl bad_paths path -m beg -i /wp-admin /wp-login.php /xmlrpc.php /bitrix /administrator /phpmyadmin /adminer /pma
           acl bad_paths path -m beg -i /vendor /phpinfo /info.php /test.php /eval-stdin /_profiler /_ignition
           acl bad_paths path -m beg -i /setup.cgi /boaform /cgi-bin /GponForm /HNAP1 /solr
-          acl bad_paths path -m beg -i /shell /dump.sql /db.sql /config.php.bak
+          acl bad_paths path -m beg -i /shell /dump.sql /db.sql /config.php.bak /roboots.txt
           acl bad_paths path -m end -i .bak .old .swp .sql .tar.gz
           acl bad_paths path_sub -i ../ %2e%2e /etc/passwd /bin/sh union+select base64_decode
 
@@ -112,7 +112,7 @@ spec:
           # ============================================================
           acl is_banned  sc0_get_gpc0 gt 0
           acl rate_abuse sc0_http_req_rate gt 300
-          acl err_abuse  sc0_http_err_rate gt 25
+          acl err_abuse  sc0_http_err_rate gt 30
 
           # Кто агрессивно ошибается (брутфорс 404) — рвём молча, экономим ресурсы
           http-request silent-drop if err_abuse
