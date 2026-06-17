@@ -20,20 +20,26 @@ Enriches all incoming HTTP requests with geographic headers:
 
 ### Setup
 
-Базы GeoLite2 скачиваются при старте пода initContainer'ом напрямую из [P3TERX/GeoLite.mmdb](https://github.com/P3TERX/GeoLite.mmdb) (GitHub releases). **Регистрация в MaxMind не требуется.**
+Базы GeoLite2 скачиваются из [P3TERX/GeoLite.mmdb](https://github.com/P3TERX/GeoLite.mmdb) (GitHub releases). **Регистрация в MaxMind не требуется.**
 
-При каждом рестарте пода initContainer качает свежие `.mmdb` базы в `emptyDir`. Обновление баз происходит автоматически с каждым перезапуском DaemonSet (например, при обновлении образа HAProxy или ручном рестарте).
+**sidecar** (`geoip-updater`) — при старте пода ждёт готовности HAProxy, скачивает базы, делает graceful reload. Затем обновляет базы **раз в 2 недели по крону** и снова reload.
+
+Обновление происходит атомарно (download → `.mmdb.new` → `mv`), без даунтайма (HAProxy reload без обрыва соединений).
+
+Geo-blocking работает в режиме **fail-open**: пока базы не загружены, трафик не блокируется. После первого reload'а блокировка включается.
 
 ### How it works
 
 ```mermaid
 flowchart LR
-    A[P3TERX/GeoLite.mmdb<br/>GitHub Releases] -->|wget| B[initContainer<br/>busybox]
-    B -->|GeoLite2-*.mmdb| C[emptyDir: /var/lib/GeoIP]
+    A[P3TERX/GeoLite.mmdb<br/>GitHub Releases] -->|"wget / cron 14d"| G[sidecar<br/>geoip-updater]
+    G -->|atomic mv + reload| C[emptyDir: /var/lib/GeoIP]
     D[ConfigMap: haproxy-geoip-lua] -->|mmdb.lua, haproxy_mmdb.lua| E[/etc/haproxy/geoip/]
     C --> F[HAProxy]
     E --> F
-    F -->|lua.mmdb_lookup| G[X-Geo-Country, X-Geo-Continent, X-Geo-ASN]
+    G -->|"echo reload | socat"| H[/var/run/haproxy-socket/admin.sock]
+    H --> F
+    F -->|lua.mmdb_lookup| I[X-Geo-Country, X-Geo-Continent, X-Geo-ASN]
 ```
 
 ### Troubleshooting
@@ -42,9 +48,16 @@ flowchart LR
 # Проверить, скачались ли базы
 kubectl -n haproxy-ingress exec daemonset/haproxy-ingress -- ls -la /var/lib/GeoIP/
 
-# Посмотреть логи initContainer'а
-kubectl -n haproxy-ingress logs daemonset/haproxy-ingress -c geoip-download
+# Посмотреть логи sidecar (последние обновления, ошибки)
+kubectl -n haproxy-ingress logs daemonset/haproxy-ingress -c geoip-updater --tail=50
 
-# Перекачать базы (рестарт DaemonSet)
+# Следить за логами sidecar в реальном времени
+kubectl -n haproxy-ingress logs daemonset/haproxy-ingress -c geoip-updater -f
+
+# Ручной перекат баз (рестарт DaemonSet)
 kubectl -n haproxy-ingress rollout restart daemonset/haproxy-ingress
+
+# Проверить, что HAProxy подхватил базы (должен быть непустой X-Geo-Country)
+kubectl -n haproxy-ingress exec daemonset/haproxy-ingress -- \
+  sh -c 'echo "show info" | socat - UNIX-CONNECT:/var/run/haproxy-socket/admin.sock | head -20'
 ```

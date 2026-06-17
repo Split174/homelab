@@ -48,6 +48,8 @@ spec:
             defaultMode: 0644
         - name: geoip-db
           emptyDir: {}
+        - name: haproxy-socket
+          emptyDir: {}
       extraVolumeMounts:
         - name: geoip-lua
           mountPath: /etc/haproxy/geoip
@@ -55,32 +57,75 @@ spec:
         - name: geoip-db
           mountPath: /var/lib/GeoIP
           readOnly: true
-      initContainers:
-        - name: geoip-download
-          image: busybox:latest
+        - name: haproxy-socket
+          mountPath: /var/run/haproxy-socket
+      extraContainers:
+        - name: geoip-updater
+          image: alpine:3.21
           command:
             - sh
             - -c
             - |
+              set -e
               GEOIP_DIR="/var/lib/GeoIP"
               BASE_URL="https://github.com/P3TERX/GeoLite.mmdb/releases/latest/download"
-              for DB in GeoLite2-Country GeoLite2-ASN; do
-                echo "Downloading ${DB}.mmdb..."
-                wget -q -O "${GEOIP_DIR}/${DB}.mmdb" "${BASE_URL}/${DB}.mmdb" || {
-                  echo "ERROR: Failed to download ${DB}.mmdb"
-                  exit 1
-                }
+              DOWNLOAD_INTERVAL=1209600  # 14 days
+
+              apk add --no-cache socat > /dev/null
+
+              download_dbs() {
+                echo "$(date -Iseconds): Downloading GeoIP databases..."
+                for DB in GeoLite2-Country GeoLite2-ASN; do
+                  wget -q -O "${GEOIP_DIR}/${DB}.mmdb.new" "${BASE_URL}/${DB}.mmdb" || {
+                    echo "ERROR: Failed to download ${DB}.mmdb"
+                    return 1
+                  }
+                done
+                # Atomic swap
+                for DB in GeoLite2-Country GeoLite2-ASN; do
+                  mv "${GEOIP_DIR}/${DB}.mmdb.new" "${GEOIP_DIR}/${DB}.mmdb"
+                done
+                echo "$(date -Iseconds): GeoIP databases updated."
+                ls -la "${GEOIP_DIR}/"
+
+                # Graceful HAProxy reload to pick up new databases
+                echo "reload" | socat - UNIX-CONNECT:/var/run/haproxy-socket/admin.sock \
+                  && echo "$(date -Iseconds): HAProxy reload triggered." \
+                  || echo "WARNING: HAProxy reload failed"
+              }
+
+              # Wait for HAProxy socket to be ready
+              for i in $(seq 1 30); do
+                if [ -S /var/run/haproxy-socket/admin.sock ]; then
+                  echo "HAProxy socket ready (attempt $i)."
+                  break
+                fi
+                echo "Waiting for HAProxy socket... ($i/30)"
+                sleep 2
               done
-              echo "GeoIP databases downloaded successfully."
-              ls -la "${GEOIP_DIR}/"
+
+              # Initial download — retry until success
+              until download_dbs; do
+                echo "$(date -Iseconds): Download failed, retrying in 60s..."
+                sleep 60
+              done
+
+              # Periodic refresh
+              while true; do
+                sleep "${DOWNLOAD_INTERVAL}"
+                download_dbs || echo "$(date -Iseconds): Update failed, will retry in ${DOWNLOAD_INTERVAL}s"
+              done
           volumeMounts:
             - name: geoip-db
               mountPath: /var/lib/GeoIP
+            - name: haproxy-socket
+              mountPath: /var/run/haproxy-socket
       defaultBackendService: honeypot/hellpot-service
       config:
         config-global: |
           lua-prepend-path /etc/haproxy/geoip/?.lua
           lua-load /etc/haproxy/geoip/haproxy_mmdb.lua
+          stats socket /var/run/haproxy-socket/admin.sock mode 660 level admin
         config-frontend: |
           # ============================================================
           #  STICK TABLE
@@ -123,9 +168,11 @@ spec:
 
           # ============================================================
           #  GEO-BLOCKING: пропускаем только Россию
+          #  (fail-open: без geo-данных трафик не блокируется)
           # ============================================================
+          acl geo_available hdr_cnt(X-Geo-Country) gt 0
           acl country_ru hdr(X-Geo-Country) -i RU
-          http-request deny deny_status 403 if !country_ru
+          http-request deny deny_status 403 if geo_available !country_ru
 
           # ============================================================
           #  4. BAD PATHS (сигнатуры сканеров уязвимостей)
