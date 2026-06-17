@@ -71,12 +71,10 @@ spec:
               BASE_URL="https://github.com/P3TERX/GeoLite.mmdb/releases/latest/download"
               DOWNLOAD_INTERVAL=1209600  # 14 days
 
-              apk add --no-cache socat > /dev/null
-
               download_dbs() {
                 echo "$(date -Iseconds): Downloading GeoIP databases..."
                 for DB in GeoLite2-Country GeoLite2-ASN; do
-                  wget -q -O "${GEOIP_DIR}/${DB}.mmdb.new" "${BASE_URL}/${DB}.mmdb" || {
+                  wget -q --timeout=30 -O "${GEOIP_DIR}/${DB}.mmdb.new" "${BASE_URL}/${DB}.mmdb" || {
                     echo "ERROR: Failed to download ${DB}.mmdb"
                     return 1
                   }
@@ -89,9 +87,16 @@ spec:
                 ls -la "${GEOIP_DIR}/"
 
                 # Graceful HAProxy reload to pick up new databases
-                echo "reload" | socat - UNIX-CONNECT:/var/run/haproxy-socket/admin.sock \
-                  && echo "$(date -Iseconds): HAProxy reload triggered." \
-                  || echo "WARNING: HAProxy reload failed"
+                # Note: stats socket does NOT support "reload" command.
+                # Send SIGUSR2 to HAProxy master process for graceful reload.
+                HAPROXY_PID=$(pidof haproxy | awk '{print $1}')
+                if [ -n "${HAPROXY_PID}" ]; then
+                  kill -USR2 "${HAPROXY_PID}" \
+                    && echo "$(date -Iseconds): HAProxy reload triggered (pid=${HAPROXY_PID})." \
+                    || echo "WARNING: HAProxy reload signal failed"
+                else
+                  echo "WARNING: HAProxy PID not found, reload skipped"
+                fi
               }
 
               # Wait for HAProxy socket to be ready
