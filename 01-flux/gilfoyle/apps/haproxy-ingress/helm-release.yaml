@@ -170,7 +170,7 @@ spec:
           #  GEO-BLOCKING: пропускаем только Россию
           #  (fail-open: lua.geo_ready=false пока базы не загружены)
           # ============================================================
-          acl geo_available lua.geo_ready -m found
+          acl geo_available lua.geo_ready -m str 1
           acl country_ru hdr(X-Geo-Country) -i RU
           http-request deny deny_status 403 if geo_available !country_ru
 

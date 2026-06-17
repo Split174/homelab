@@ -73,7 +73,7 @@ core.register_fetches("geo_ready", function()
 	if geo_ready then
 		return "1"
 	end
-	return nil
+	return "0"
 end)
 
 init()
