@@ -4,3 +4,12 @@ resources:
   - ns.yaml
   - helm-repo.yaml
   - helm-release.yaml
+
+configMapGenerator:
+  - name: haproxy-geoip-lua
+    namespace: haproxy-ingress
+    files:
+      - mmdb.lua
+      - haproxy_mmdb.lua
+    options:
+      disableNameSuffixHash: true

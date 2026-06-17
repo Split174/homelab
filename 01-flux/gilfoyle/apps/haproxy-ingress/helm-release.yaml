@@ -41,8 +41,46 @@ spec:
           - port: 443
             targetPort: https
             nodePort: 30443
+      extraVolumes:
+        - name: geoip-lua
+          configMap:
+            name: haproxy-geoip-lua
+            defaultMode: 0644
+        - name: geoip-db
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: geoip-lua
+          mountPath: /etc/haproxy/geoip
+          readOnly: true
+        - name: geoip-db
+          mountPath: /var/lib/GeoIP
+          readOnly: true
+      initContainers:
+        - name: geoip-download
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              GEOIP_DIR="/var/lib/GeoIP"
+              BASE_URL="https://github.com/P3TERX/GeoLite.mmdb/releases/latest/download"
+              for DB in GeoLite2-Country GeoLite2-ASN; do
+                echo "Downloading ${DB}.mmdb..."
+                wget -q -O "${GEOIP_DIR}/${DB}.mmdb" "${BASE_URL}/${DB}.mmdb" || {
+                  echo "ERROR: Failed to download ${DB}.mmdb"
+                  exit 1
+                }
+              done
+              echo "GeoIP databases downloaded successfully."
+              ls -la "${GEOIP_DIR}/"
+          volumeMounts:
+            - name: geoip-db
+              mountPath: /var/lib/GeoIP
       defaultBackendService: honeypot/hellpot-service
       config:
+        config-global: |
+          lua-prepend-path /etc/haproxy/geoip/?.lua
+          lua-load /etc/haproxy/geoip/haproxy_mmdb.lua
         config-frontend: |
           # ============================================================
           #  STICK TABLE
@@ -63,6 +101,14 @@ spec:
           http-request track-sc0 var(req.real_ip)
 
           # ============================================================
+          #  GEOIP ENRICHMENT
+          #  Базы качаются из P3TERX/GeoLite.mmdb (GeoLite2-Country + GeoLite2-ASN)
+          # ============================================================
+          http-request set-header X-Geo-Country %[var(req.real_ip),lua.mmdb_lookup(country,country,iso_code)]
+          http-request set-header X-Geo-Continent %[var(req.real_ip),lua.mmdb_lookup(country,continent,code)]
+          http-request set-header X-Geo-ASN %[var(req.real_ip),lua.mmdb_lookup(asn,autonomous_system_number)]
+
+          # ============================================================
           #  2. СВОЙ ТРАФИК ПРОПУСКАЕМ БЕЗУСЛОВНО (до любых проверок)
           #     k8s probes, мониторинг, внутренние сервисы
           # ============================================================
@@ -74,6 +120,12 @@ spec:
           # ============================================================
           acl flood sc0_conn_rate gt 30
           http-request silent-drop if flood
+
+          # ============================================================
+          #  GEO-BLOCKING: пропускаем только Россию
+          # ============================================================
+          acl country_ru hdr(X-Geo-Country) -i RU
+          http-request deny deny_status 403 if !country_ru
 
           # ============================================================
           #  4. BAD PATHS (сигнатуры сканеров уязвимостей)
