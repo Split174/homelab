@@ -1,6 +1,7 @@
 -- luacheck: globals core
 local mmdb = require("mmdb")
 local db_country, db_asn
+local geo_ready = false
 
 local function init()
 	local ok, r = pcall(mmdb.open, "/var/lib/GeoIP/GeoLite2-Country.mmdb")
@@ -10,6 +11,12 @@ local function init()
 	ok, r = pcall(mmdb.open, "/var/lib/GeoIP/GeoLite2-ASN.mmdb")
 	if ok then
 		db_asn = r
+	end
+	if db_country and db_asn then
+		geo_ready = true
+		core.log(core.info, "GeoIP databases loaded successfully.")
+	else
+		core.log(core.warning, "GeoIP databases not available — geo-blocking disabled.")
 	end
 end
 
@@ -60,6 +67,13 @@ end
 
 core.register_converters("mmdb_lookup", function(ip, db_type, ...)
 	return mmdb_lookup(ip, db_type, ...)
+end)
+
+core.register_fetches("geo_ready", function()
+	if geo_ready then
+		return "1"
+	end
+	return nil
 end)
 
 init()

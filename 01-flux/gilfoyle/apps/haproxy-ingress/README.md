@@ -54,6 +54,9 @@ kubectl -n haproxy-ingress logs daemonset/haproxy-ingress -c geoip-updater --tai
 # Следить за логами sidecar в реальном времени
 kubectl -n haproxy-ingress logs daemonset/haproxy-ingress -c geoip-updater -f
 
+# Проверить состояние geo_ready в логах HAProxy
+kubectl -n haproxy-ingress logs daemonset/haproxy-ingress | grep -i geo
+
 # Ручной перекат баз (рестарт DaemonSet)
 kubectl -n haproxy-ingress rollout restart daemonset/haproxy-ingress
 
