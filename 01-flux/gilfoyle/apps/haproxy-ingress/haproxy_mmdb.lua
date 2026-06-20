@@ -2,22 +2,38 @@
 local mmdb = require("mmdb")
 local db_country, db_asn
 local geo_ready = false
+local last_try = 0
+local RETRY_INTERVAL = 60  -- секунд между попытками открыть базы
 
-local function init()
-	local ok, r = pcall(mmdb.open, "/var/lib/GeoIP/GeoLite2-Country.mmdb")
-	if ok then
-		db_country = r
+local function try_open()
+	if db_country and db_asn then
+		return true
 	end
-	ok, r = pcall(mmdb.open, "/var/lib/GeoIP/GeoLite2-ASN.mmdb")
-	if ok then
-		db_asn = r
+	local now = os.time()
+	if now - last_try < RETRY_INTERVAL then
+		return false
 	end
+	last_try = now
+
+	if not db_country then
+		local ok, r = pcall(mmdb.open, "/var/lib/GeoIP/GeoLite2-Country.mmdb")
+		if ok then
+			db_country = r
+		end
+	end
+	if not db_asn then
+		local ok, r = pcall(mmdb.open, "/var/lib/GeoIP/GeoLite2-ASN.mmdb")
+		if ok then
+			db_asn = r
+		end
+	end
+
 	if db_country and db_asn then
 		geo_ready = true
-		core.log(core.info, "GeoIP databases loaded successfully.")
-	else
-		core.log(core.warning, "GeoIP databases not available — geo-blocking disabled.")
+		core.log(core.info, "GeoIP databases loaded successfully (lazy).")
+		return true
 	end
+	return false
 end
 
 local function search(db, ip)
@@ -30,6 +46,7 @@ local function search(db, ip)
 end
 
 local function mmdb_lookup(ip, db_type, ...)
+	try_open()
 	local db
 	if db_type == "country" then
 		db = db_country
@@ -70,10 +87,11 @@ core.register_converters("mmdb_lookup", function(ip, db_type, ...)
 end)
 
 core.register_fetches("geo_ready", function()
+	try_open()
 	if geo_ready then
 		return "1"
 	end
 	return "0"
 end)
 
-init()
+try_open()

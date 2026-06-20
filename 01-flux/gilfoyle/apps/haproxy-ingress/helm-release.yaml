@@ -190,7 +190,7 @@ spec:
           #     fail-open: пока базы не загружены (lua.geo_ready=0) — не блокируем
           # ============================================================
           acl geo_available   lua.geo_ready -m str 1
-          acl country_allowed hdr(X-Geo-Country) -i RU FR NL
+          acl country_allowed hdr(X-Geo-Country) -i RU
           http-request deny deny_status 403 if geo_available !country_allowed
 
           # ============================================================
