@@ -126,8 +126,8 @@ spec:
           #  Базы качаются из P3TERX/GeoLite.mmdb (GeoLite2-Country + GeoLite2-ASN)
           # ============================================================
           http-request set-header X-Geo-Country %[var(req.real_ip),lua.mmdb_lookup(country,country,iso_code)]
-          http-request set-header X-Geo-Continent %[var(req.real_ip),lua.mmdb_lookup(country,continent,code)]
-          http-request set-header X-Geo-ASN %[var(req.real_ip),lua.mmdb_lookup(asn,autonomous_system_number)]
+          #http-request set-header X-Geo-Continent %[var(req.real_ip),lua.mmdb_lookup(country,continent,code)]
+          #http-request set-header X-Geo-ASN %[var(req.real_ip),lua.mmdb_lookup(asn,autonomous_system_number)]
 
           # ============================================================
           #  2. СВОЙ ТРАФИК ПРОПУСКАЕМ БЕЗУСЛОВНО (до любых проверок)
@@ -138,11 +138,11 @@ spec:
           # ============================================================
           #  3. АНТИФЛУД (мгновенный, не залипающий)
           # ============================================================
-          acl flood sc0_conn_rate gt 30
-          http-request silent-drop if flood
+          acl flood sc0_conn_rate gt 1000
+          http-request deny deny_status 429 hdr Retry-After 10 if flood
 
           acl err_abuse sc0_http_err_rate gt 300
-          http-request silent-drop if err_abuse
+          http-request deny deny_status 429 hdr Retry-After 10 if err_abuse
 
           # ============================================================
           #  4. GEO-BLOCKING: пропускаем только RU, FR, NL
