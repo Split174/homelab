@@ -21,18 +21,6 @@ spec:
   upgrade:
     remediation:
       retries: 3
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              group: apps
-              version: v1
-              kind: DaemonSet
-              name: haproxy-ingress
-            patch: |
-              - op: add
-                path: /spec/template/spec/shareProcessNamespace
-                value: true
   # Defaults: values.yaml https://github.com/haproxy-ingress/charts/blob/release-0.15/haproxy-ingress/values.yaml
   values:
     controller:
@@ -60,8 +48,6 @@ spec:
             defaultMode: 0644
         - name: geoip-db
           emptyDir: {}
-        - name: haproxy-socket
-          emptyDir: {}
       extraVolumeMounts:
         - name: geoip-lua
           mountPath: /etc/haproxy/geoip
@@ -69,8 +55,6 @@ spec:
         - name: geoip-db
           mountPath: /var/lib/GeoIP
           readOnly: true
-        - name: haproxy-socket
-          mountPath: /var/run/haproxy-socket
       extraContainers:
         - name: geoip-updater
           image: alpine:3.21
@@ -97,29 +81,8 @@ spec:
                 done
                 echo "$(date -Iseconds): GeoIP databases updated."
                 ls -la "${GEOIP_DIR}/"
-
-                # Graceful HAProxy reload to pick up new databases.
-                # Lua грузит базы только в init(), поэтому нужен реальный reload процесса.
-                # Требует shareProcessNamespace: true, чтобы видеть PID haproxy.
-                HAPROXY_PID=$(pidof haproxy | awk '{print $1}')
-                if [ -n "${HAPROXY_PID}" ]; then
-                  kill -USR2 "${HAPROXY_PID}" \
-                    && echo "$(date -Iseconds): HAProxy reload triggered (pid=${HAPROXY_PID})." \
-                    || echo "WARNING: HAProxy reload signal failed"
-                else
-                  echo "WARNING: HAProxy PID not found, reload skipped"
-                fi
+                echo "$(date -Iseconds): Note - new databases will be picked up on next HAProxy reload."
               }
-
-              # Wait for HAProxy socket to be ready
-              for i in $(seq 1 30); do
-                if [ -S /var/run/haproxy-socket/admin.sock ]; then
-                  echo "HAProxy socket ready (attempt $i)."
-                  break
-                fi
-                echo "Waiting for HAProxy socket... ($i/30)"
-                sleep 2
-              done
 
               # Initial download — retry until success
               until download_dbs; do
@@ -135,14 +98,11 @@ spec:
           volumeMounts:
             - name: geoip-db
               mountPath: /var/lib/GeoIP
-            - name: haproxy-socket
-              mountPath: /var/run/haproxy-socket
       defaultBackendService: honeypot/hellpot-service
       config:
         config-global: |
           lua-prepend-path /etc/haproxy/geoip/?.lua
           lua-load /etc/haproxy/geoip/haproxy_mmdb.lua
-          stats socket /var/run/haproxy-socket/admin.sock mode 660 level admin
         config-frontend: |
           # ============================================================
           #  STICK TABLE

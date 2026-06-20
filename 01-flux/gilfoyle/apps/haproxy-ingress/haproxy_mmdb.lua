@@ -1,38 +1,48 @@
 -- luacheck: globals core
 local mmdb = require("mmdb")
+
 local db_country, db_asn
 local geo_ready = false
-local last_try = 0
-local RETRY_INTERVAL = 60  -- секунд между попытками открыть базы
 
-local function try_open()
+-- Интервалы (в секундах)
+local RETRY_INTERVAL   = 60      -- между попытками, пока базы ещё не загружены
+local REFRESH_INTERVAL = 3600    -- как часто переоткрывать уже загруженные базы (1ч)
+
+local COUNTRY_PATH = "/var/lib/GeoIP/GeoLite2-Country.mmdb"
+local ASN_PATH     = "/var/lib/GeoIP/GeoLite2-ASN.mmdb"
+
+-- Открыть одну базу; возвращает handle или nil
+local function open_db(path)
+	local ok, r = pcall(mmdb.open, path)
+	if ok and r then
+		return r
+	end
+	return nil
+end
+
+-- Перечитать обе базы. Atomic-ish: меняем глобальные ссылки только при успехе.
+-- Поскольку sidecar делает атомарный mv, на диске всегда валидный файл.
+local function reload_dbs()
+	local c = open_db(COUNTRY_PATH)
+	local a = open_db(ASN_PATH)
+
+	if c then
+		db_country = c
+	end
+	if a then
+		db_asn = a
+	end
+
 	if db_country and db_asn then
-		return true
-	end
-	local now = os.time()
-	if now - last_try < RETRY_INTERVAL then
-		return false
-	end
-	last_try = now
-
-	if not db_country then
-		local ok, r = pcall(mmdb.open, "/var/lib/GeoIP/GeoLite2-Country.mmdb")
-		if ok then
-			db_country = r
+		if not geo_ready then
+			core.log(core.info, "GeoIP databases loaded successfully.")
+		else
+			core.log(core.info, "GeoIP databases reloaded.")
 		end
-	end
-	if not db_asn then
-		local ok, r = pcall(mmdb.open, "/var/lib/GeoIP/GeoLite2-ASN.mmdb")
-		if ok then
-			db_asn = r
-		end
-	end
-
-	if db_country and db_asn then
 		geo_ready = true
-		core.log(core.info, "GeoIP databases loaded successfully (lazy).")
 		return true
 	end
+
 	return false
 end
 
@@ -46,7 +56,6 @@ local function search(db, ip)
 end
 
 local function mmdb_lookup(ip, db_type, ...)
-	try_open()
 	local db
 	if db_type == "country" then
 		db = db_country
@@ -55,10 +64,12 @@ local function mmdb_lookup(ip, db_type, ...)
 	else
 		return nil
 	end
+
 	local result = search(db, ip)
 	if not result then
 		return nil
 	end
+
 	local props = { ... }
 	local obj = result
 	if #props == 0 then
@@ -87,11 +98,24 @@ core.register_converters("mmdb_lookup", function(ip, db_type, ...)
 end)
 
 core.register_fetches("geo_ready", function()
-	try_open()
 	if geo_ready then
 		return "1"
 	end
 	return "0"
 end)
 
-try_open()
+-- Фоновая задача: дожидается появления баз, затем периодически переоткрывает их.
+-- Запускается в каждом воркере независимо.
+core.register_task(function()
+	-- Фаза 1: ждём появления баз (sidecar может ещё качать)
+	while not reload_dbs() do
+		core.log(core.info, "GeoIP databases not ready yet, retrying...")
+		core.msleep(RETRY_INTERVAL * 1000)
+	end
+
+	-- Фаза 2: периодический рефреш, чтобы подхватывать обновления от sidecar
+	while true do
+		core.msleep(REFRESH_INTERVAL * 1000)
+		pcall(reload_dbs)
+	end
+end)
