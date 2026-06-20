@@ -111,7 +111,6 @@ spec:
 
           # ============================================================
           #  1. ОПРЕДЕЛЕНИЕ РЕАЛЬНОГО IP
-          #     XFF доверяем только от внутренних прокси
           # ============================================================
           acl internal src 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 127.0.0.0/8
           acl has_xff   req.hdr(X-Forwarded-For) -m found
@@ -150,7 +149,7 @@ spec:
           #     fail-open: пока базы не загружены (lua.geo_ready=0) — не блокируем
           # ============================================================
           acl geo_available   lua.geo_ready -m str 1
-          acl country_allowed hdr(X-Geo-Country) -i RU
+          acl country_allowed hdr(X-Geo-Country) -i RU FR NL
           http-request deny deny_status 403 if geo_available !country_allowed
 
           # ============================================================
@@ -166,7 +165,6 @@ spec:
 
           # ============================================================
           #  6. ЯВНЫЕ СКАНЕРЫ / ВРЕДОНОСНЫЕ UA
-          #     curl/wget/python НЕ баним — слишком широко
           # ============================================================
           acl bad_ua hdr_sub(User-Agent) -i sqlmap nikto nmap masscan zgrab nuclei dirbuster gobuster ffuf
           acl bad_ua hdr_sub(User-Agent) -i wpscan acunetix nessus openvas qualys whatweb
@@ -179,7 +177,6 @@ spec:
 
           # ============================================================
           #  8. НАПРАВЛЯЕМ ПЛОХИХ В HELLPOT
-          #     Решение принимается на каждый запрос отдельно — без sticky-бана.
           #     Баним только: bad_paths, bad_ua, seo-боты.
           # ============================================================
           use_backend honeypot_hellpot-service_8080 if bad_paths
