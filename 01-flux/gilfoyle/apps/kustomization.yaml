@@ -27,3 +27,4 @@ resources:
 - ./reflector
 - ./coroot-operator
 - ./coroot
+- ./mcp

@@ -1,0 +1,42 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kubernetes-mcp-server
+  namespace: mcp
+spec:
+  releaseName: kubernetes-mcp-server
+  chart:
+    spec:
+      chart: oci://ghcr.io/containers/charts/kubernetes-mcp-server
+      #version: ">=0.0.0"
+  interval: 10m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    ingress:
+      enabled: false
+
+    # --- RBAC: read-only на уровне K8s ---
+    rbac:
+      create: true
+      extraClusterRoleBindings:
+        - name: view-binding
+          roleRef:
+            name: view
+            external: true
+
+    # --- Конфигурация MCP-сервера ---
+    config:
+      port: "8080"
+      read_only: true
+      disabled_tools:
+        - "pods_log"
+        - "nodes_log"
+      denied_resources:
+        - group: ""
+          version: "v1"
+          kind: "Secret"
