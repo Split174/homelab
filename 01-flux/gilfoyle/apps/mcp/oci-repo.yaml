@@ -1,0 +1,10 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: OCIRepository
+metadata:
+  name: kubernetes-mcp-server
+  namespace: mcp
+spec:
+  interval: 120m
+  url: oci://ghcr.io/containers/charts/kubernetes-mcp-server
+  ref:
+    semver: ">=0.0.0"
