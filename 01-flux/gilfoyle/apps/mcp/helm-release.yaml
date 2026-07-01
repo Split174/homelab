@@ -5,13 +5,10 @@ metadata:
   namespace: mcp
 spec:
   releaseName: kubernetes-mcp-server
-  chart:
-    spec:
-      chart: kubernetes-mcp-server
-      sourceRef:
-        kind: OCIRepository
-        name: kubernetes-mcp-server
-        namespace: mcp
+  chartRef:
+    kind: OCIRepository
+    name: kubernetes-mcp-server
+    namespace: mcp
   interval: 10m
   install:
     remediation:
