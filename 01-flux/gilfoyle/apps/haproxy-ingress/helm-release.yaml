@@ -148,9 +148,10 @@ spec:
           #  4. GEO-BLOCKING: пропускаем только RU, FR, NL
           #     fail-open: пока базы не загружены (lua.geo_ready=0) — не блокируем
           # ============================================================
+          acl acme_challenge  path -m beg -i /.well-known/acme-challenge
           acl geo_available   lua.geo_ready -m str 1
           acl country_allowed hdr(X-Geo-Country) -i RU FR NL
-          http-request deny deny_status 403 if geo_available !country_allowed
+          http-request deny deny_status 403 if geo_available !country_allowed !acme_challenge
 
           # ============================================================
           #  5. BAD PATHS (сигнатуры сканеров уязвимостей)
