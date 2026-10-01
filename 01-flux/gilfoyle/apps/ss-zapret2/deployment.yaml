@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ss-zapret2
+  namespace: zapret
+  labels:
+    app: ss-zapret2
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ss-zapret2
+  template:
+    metadata:
+      labels:
+        app: ss-zapret2
+    spec:
+      # zapret2 работает в netns пода: iptables + NFQUEUE внутри контейнера
+      # перехватывают исходящий трафик самого пода.
+      containers:
+        - name: ss-zapret2
+          image: vernette/ss-zapret2:v1.0.5
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+          env:
+            - name: SS_PORT
+              value: "8388"
+            - name: SOCKS_PORT
+              value: "1080"
+            - name: SS_ENCRYPT_METHOD
+              value: chacha20-ietf-poly1305
+            - name: SS_TIMEOUT
+              value: "300"
+            - name: SS_VERBOSE
+              value: "0"
+            - name: SS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ss-zapret2
+                  key: password
+          ports:
+            - name: socks
+              containerPort: 1080
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - nc -z localhost 8388 && nc -z localhost 1080
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - nc -z localhost 1080
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            # одиночный файл конфига: /opt/zapret2/config
+            - name: config
+              mountPath: /opt/zapret2/config
+              subPath: config
+            - name: lua
+              mountPath: /opt/zapret2/lua
+            - name: fakes
+              mountPath: /opt/zapret2/files/fake
+            - name: customd
+              mountPath: /opt/zapret2/init.d/sysv/custom.d
+      volumes:
+        - name: config
+          configMap:
+            name: zapret2-config
+        # writable: entrypoint при первом старте раскладывает сюда дефолты из *.dist
+        - name: lua
+          emptyDir: {}
+        - name: fakes
+          emptyDir: {}
+        - name: customd
+          emptyDir: {}

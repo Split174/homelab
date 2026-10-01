@@ -23,6 +23,7 @@ resources:
 - ./ygg-gateway
 - ./databag
 - ./xmp-viz
+- ./ss-zapret2
 - ./zot
 - ./reflector
 - ./coroot-operator
