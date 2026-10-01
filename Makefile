@@ -42,7 +42,14 @@ logs:
 # Локальная проверка сборки ПЕРЕД пушем в Git
 lint:
 	@printf "\n🔍 --- Local Kustomize Lint ---\n"
-	@kustomize build 01-flux/gilfoyle/flux-system > /dev/null && echo "✅ Build successful" || echo "❌ Build failed - check paths and duplicates!"
+	@for path in 01-flux/gilfoyle/apps 01-flux/gilfoyle/flux-system; do \
+		if kustomize build $$path > /dev/null; then \
+			echo "✅ Build successful: $$path"; \
+		else \
+			echo "❌ Build failed: $$path - check paths and duplicates!"; \
+			exit 1; \
+		fi; \
+	done
 
 # Принудительный "пинок" Flux
 reconcile:

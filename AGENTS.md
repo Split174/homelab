@@ -540,11 +540,16 @@ stringData:
 
 ## 12. Zot и сборка образов через Kaniko
 
-Локальный registry:
+Локальный registry для self-built образов:
 
 ```text
 zot.themiple.ru
 ```
+
+Это основной registry для собственных образов (например, `xmp-viz`).
+Внешние registry (например, `ghcr.io`) также допустимы: если образ собирается и
+пушится в GHCR, указывай это явно и фиксируй digest или тег. Для self-built
+образов предпочитай локальный `zot.themiple.ru`.
 
 Для приложений без готового публичного образа разрешена сборка через Kaniko.
 
@@ -723,6 +728,12 @@ kustomize build 01-flux/gilfoyle/apps/<app>
 
 ```bash
 kustomize build 01-flux/gilfoyle/apps
+```
+
+Эквивалентная быстрая проверка обеих Kustomization (`apps` и `flux-system`):
+
+```bash
+make lint
 ```
 
 Также проверь:
