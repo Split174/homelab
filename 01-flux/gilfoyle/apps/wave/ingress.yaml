@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: remnawave
+  namespace: remnawave
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+spec:
+  ingressClassName: haproxy
+  tls:
+    - hosts:
+        - "wave.themiple.ru"
+      secretName: wave-themiple-ru-tls
+    - hosts:
+        - "fans.themiple.ru"
+      secretName: fans-themiple-ru-tls
+  rules:
+    # Panel
+    - host: "wave.themiple.ru"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: remnawave
+                port:
+                  number: 3000
+    # Subscription page
+    - host: "fans.themiple.ru"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: remnawave-subscription-page
+                port:
+                  number: 3010

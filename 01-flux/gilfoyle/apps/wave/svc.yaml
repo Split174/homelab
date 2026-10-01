@@ -1,0 +1,40 @@
+# PostgreSQL Service is provided by CloudNativePG as `remnawave-db-rw`
+# (see pg.yaml), so it is intentionally NOT defined here.
+apiVersion: v1
+kind: Service
+metadata:
+  name: remnawave-redis
+  namespace: remnawave
+spec:
+  selector:
+    app: remnawave-redis
+  ports:
+    - name: valkey
+      port: 6379
+      targetPort: valkey
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: remnawave
+  namespace: remnawave
+spec:
+  selector:
+    app: remnawave
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: remnawave-subscription-page
+  namespace: remnawave
+spec:
+  selector:
+    app: remnawave-subscription-page
+  ports:
+    - name: http
+      port: 3010
+      targetPort: http

@@ -28,3 +28,4 @@ resources:
 - ./coroot-operator
 - ./coroot
 - ./mcp
+- ./wave

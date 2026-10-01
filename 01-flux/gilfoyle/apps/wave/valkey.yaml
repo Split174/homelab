@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remnawave-redis
+  namespace: remnawave
+  labels:
+    app: remnawave-redis
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: remnawave-redis
+  template:
+    metadata:
+      labels:
+        app: remnawave-redis
+    spec:
+      containers:
+        - name: valkey
+          # Pinned major version
+          image: valkey/valkey:9-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+          args:
+            - >-
+              exec valkey-server
+              --requirepass "$REDIS_PASSWORD"
+              --save ""
+              --appendonly no
+              --maxmemory-policy noeviction
+              --loglevel warning
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: remnawave-secrets
+                  key: REDIS_PASSWORD
+          ports:
+            - name: valkey
+              containerPort: 6379
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - valkey-cli -a "$REDIS_PASSWORD" ping | grep -q PONG
+            initialDelaySeconds: 3
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - valkey-cli -a "$REDIS_PASSWORD" ping | grep -q PONG
+            initialDelaySeconds: 10

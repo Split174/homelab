@@ -1,0 +1,18 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: remnawave-db
+  namespace: remnawave
+spec:
+  instances: 1
+  # Single-node homelab: local-path-critical (Retain) on /mnt/critical-data
+  storage:
+    storageClass: local-path-critical
+    size: 5Gi
+  bootstrap:
+    initdb:
+      database: remnawave
+      owner: remnawave
+  # The operator generates the `remnawave-db-app` secret with keys:
+  # host, port, user, password, dbname, uri, jdbc-uri ...
+  # The panel consumes the `uri` key as DATABASE_URL (see panel.yaml).

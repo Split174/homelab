@@ -1,7 +1,0 @@
-{
-  "mcpServers": {
-    "kubernetes-mcp": {
-      "url": "http://localhost:8082/mcp"
-    }
-  }
-}
