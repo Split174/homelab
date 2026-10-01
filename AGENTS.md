@@ -1,131 +1,774 @@
 # AGENTS.md
 
-Guidelines and mandatory instructions for AI agents working in this homelab repository.
+Инструкции и обязательные правила для AI-агентов, работающих с этим homelab-репозиторием.
 
-## 🚨 CRITICAL: Use MCP Tools for Cluster Navigation 🚨
+## 1. Общие принципы
 
-This repository is equipped with a custom **MCP Server for Flux/GitOps** (`flux-mcp-server`), running locally. 
-**You MUST use these MCP tools to explore, navigate, and analyze the cluster structure.** 
-DO NOT use generic tools like `rg`, `grep`, or `read_file` to search for resources across multiple directories. 
-
-Use these tools first:
-1. `list_resources` — Get an instant list of all resources (e.g., `kind: "HelmRelease"`) with file paths.
-2. `get_flux_dependencies` — See what upstream Kustomizations/HelmReleases a resource depends on.
-3. `get_resource_yaml` — Extract specific Kubernetes manifests.
-4. `get_helm_values` — **Highly recommended.** Extracts ONLY the `spec.values` from a `HelmRelease`. Use this instead of reading massive helm-release YAML files to save context tokens and avoid parsing boilerplate.
-
-**Example workflow:** To modify Grafana plugins, call `list_resources(kind="HelmRelease")` -> call `get_helm_values(name="grafana")` -> open the file using its path -> edit only the plugins section -> save.
-
-### When to use MCP vs Built-in Zed File Editor:
-- **EXPLORATION (Use MCP):** If you are asked to analyze dependencies, find which app uses a specific config, or summarize the cluster architecture, ALWAYS use `list_resources`, `get_flux_dependencies`, or `get_helm_values`.
-- **DIRECT EDITING (Use Built-in Zed tools):** If the user asks for a simple, direct edit (e.g., "Change the domain in Zot", "Update chart version"), and you already know the file path (e.g., `apps/zot/helm-release.yaml`), **DO NOT** use MCP. Just use standard file reading/editing tools to quickly patch the file. MCP is read-only and using it before a known direct edit wastes context tokens.
-
+- Репозиторий управляет Kubernetes-кластером через Flux CD и GitOps.
+- Все изменения должны быть декларативными, воспроизводимыми и пригодными для хранения в Git.
+- Не выполняй потенциально разрушительные действия без явного разрешения пользователя.
+- Не делай `git commit`, `git push`, `kubectl apply`, `kubectl delete`, `helm install`, `flux reconcile`, `make reconcile` и другие изменения живого кластера без отдельного запроса.
+- Не изменяй файлы, которые не относятся к текущей задаче.
+- Если обнаружены чужие незакоммиченные изменения, не перезаписывай, не форматируй и не откатывай их.
+- Не принимай архитектурные решения с существенными последствиями молча. Если неизвестны домен, размер PVC, StorageClass, способ аутентификации или источник образа — задай уточняющий вопрос.
+- Перед завершением работы проверь локальную сборку Kustomize, `git diff --check` и список изменённых файлов.
+- В финальном ответе кратко и точно перечисли:
+  1. какие файлы созданы или изменены;
+  2. какие решения приняты;
+  3. какие проверки выполнены;
+  4. что осталось сделать пользователю;
+  5. какие ограничения или риски остались.
 
 ---
 
-## Project Overview
+## 2. Обзор репозитория
 
-This is a **Kubernetes homelab** managed by **Flux CD** (GitOps). The cluster is provisioned with **k0s** (see `00-k0s-init/k0sctl.yml`) and runs on a single node named `gilfoyle`.
+Это Kubernetes homelab, управляемый через Flux CD.
 
-- **Git repo**: `ssh://git@github.com/Split174/homelab.git` (branch `master`)
-- **Flux sync interval**: GitRepository every 1m, Kustomizations every 10m
-- **Kubeconfig**: stored at `./.private-files/gilfoyle.yaml` (gitignored)
-- **CLI tools used**: `flux`, `kubectl`, `kustomize`, `sops`, `helm`, `make`
+- Kubernetes-дистрибутив: k0s.
+- Кластер состоит из одной ноды `gilfoyle`.
+- Git-репозиторий: `ssh://git@github.com/Split174/homelab.git`.
+- Основная ветка: `master`.
+- Kubeconfig: `./.private-files/gilfoyle.yaml`.
+- Основные инструменты: `flux`, `kubectl`, `kustomize`, `helm`, `sops`, `make`.
+- Секреты в Git шифруются через SOPS с использованием age.
 
-## Repository Layout
+Структура репозитория:
 
 ```text
 homelab/
-├── .private-files/          # gitignored — kubeconfig, age key, etc.
-├── .sops.yaml               # sops config (age encryption rules)
-├── .gitignore               # hides *secret*.yaml, keeps *secret*.enc.yaml
-├── Makefile                 # diagnostic targets (debug, status, reconcile…)
+├── .private-files/          # kubeconfig, age-ключи и другие приватные файлы
+├── .sops.yaml               # правила шифрования SOPS
+├── .gitignore
+├── Makefile
 ├── README.md
 ├── AGENTS.md
-├── 00-k0s-init/             # k0s cluster bootstrap (k0sctl.yml)
+├── 00-k0s-init/             # конфигурация и bootstrap k0s
 └── 01-flux/
     └── gilfoyle/
-        ├── flux-system/      # Flux bootstrap (gotk-components, sync, apps Kustomization)
-        └── apps/             # all applications live here
-            ├── kustomization.yaml   # enables/disables apps
-            ├── grafana/
-            ├── victoria-logs/
-            ├── cert-manager/
-            ├── ...
+        ├── flux-system/      # bootstrap Flux и корневая Kustomization
+        └── apps/             # приложения кластера
 ```
 
-## How Flux Works Here
+---
 
-1. **`flux-system` Kustomization** — bootstraps Flux itself and creates a `GitRepository` pointing at this repo.
-2. **`apps` Kustomization** (`apps.yaml`) — watches `./01-flux/gilfoyle/apps/` path and applies everything recursively. This Kustomization has **SOPS decryption** configured. Encrypted secrets are decrypted on-the-fly using the `sops-age` key stored in the `flux-system` namespace.
-3. **No Explicit DependsOn**: We generally don't use explicit `dependsOn` arrays. Flux applies resources in the order of their source dependencies. 
+## 3. Навигация и изучение репозитория
 
-## Adding a New Application
+Для изучения репозитория используй встроенные инструменты:
 
-Each app directory under `01-flux/gilfoyle/apps/` typically contains:
+- `bash` — для `ls`, `find`, `rg`, `git status`, `git diff` и локальной валидации;
+- `read` — для чтения содержимого файлов;
+- `edit` — для точечных изменений;
+- `write` — только для новых файлов или полной осознанной перезаписи.
 
-| File | Purpose |
-|---|---|
-| `namespace.yaml` | `Namespace` resource |
-| `helm-repo.yaml` | `HelmRepository` (for Helm-based apps) |
-| `helm-release.yaml` | `HelmRelease` with all values |
-| `kustomization.yaml` | assembles the resources |
-| `secret.enc.yaml` | encrypted secrets (optional) |
-| `ingress.yaml` | standalone Ingress (if not inlined in helm-release) |
+### Рекомендуемый порядок работы
 
-To enable an app, add it to `apps/kustomization.yaml`. To disable, comment it out.
+1. Начни с наиболее узкого каталога, относящегося к задаче.
+2. Найди нужные ресурсы целевым поиском.
+3. Прочитай только релевантные файлы.
+4. Изучи существующий похожий пример в репозитории.
+5. Сверь новые параметры с upstream-документацией.
+6. Внеси изменения.
+7. Выполни локальную проверку.
 
-### Conventions
-
-- **Ingress class**: `haproxy` (not nginx)
-- **TLS**: `cert-manager.io/cluster-issuer: "letsencrypt"` annotation on ingresses
-- **Storage**: `local-path` storage class for persistent volumes (single-node, use `strategy: Recreate`)
-- **HelmRelease API**: `helm.toolkit.fluxcd.io/v2`
-
-## Secrets Management
-
-Secrets are **encrypted at rest in Git** using [SOPS](https://github.com/getsops/sops) with **age** encryption. 
-
-### Configuration Files
-
-- **`.sops.yaml`** — defines encryption rules: all files matching `.*\.enc\.yaml$` are encrypted with the age public key. Only `data` and `stringData` fields are encrypted (`encrypted_regex`).
-- **`.gitignore`** — pattern `*secret*.yaml` blocks plain secrets, while `!*secret*.enc.yaml` allows encrypted versions through.
-
-### Secret Naming Convention
-
-| Pattern | Meaning |
-|---|---|
-| `secret.enc.yaml` | Encrypted secret (committed to Git) |
-| `secret.yaml` | Plain-text secret (gitignored, **never commit**) |
-
-### Workflow: Editing or Creating Secrets
-
-As an AI agent, you **cannot** execute `sops` directly in the terminal if it requires interactive `$EDITOR` access. 
-
-To create or update a secret:
-1. Write the **plain-text** YAML manifest.
-2. Ask the human user to run `sops --encrypt --in-place <path-to-file.enc.yaml>` locally. 
-3. **Never attempt to write plain-text directly into a `.enc.yaml` file** without asking the user to encrypt it via CLI before committing.
-4. Always verify `git diff` to ensure no plain-text secrets leak into commits.
-
-## Useful Commands
+Примеры целевого поиска:
 
 ```bash
-# Full Flux diagnostic
-make debug
-
-# Force Flux reconciliation
-make reconcile
-
-# Check a specific HelmRelease
-make check-helm
-
-# Local kustomize lint (catches YAML/patch errors before pushing)
-make lint
+find 01-flux/gilfoyle/apps/<app> -maxdepth 2 -type f
+rg -n "kind: HelmRelease" 01-flux/gilfoyle/apps/<app>
+rg -n "name: <resource-name>" 01-flux/gilfoyle/apps
 ```
 
-## Notes
+### Ограничение области поиска
 
-- Some apps might be commented out in `apps/kustomization.yaml` (e.g., `metallb`, `envoy-gateway`). They are disabled but kept in the repo for future use.
-- The `Makefile` sets `KUBECONFIG` to `./.private-files/gilfoyle.yaml` automatically for all targets.
-- When configuring Helm charts, use `get_helm_values` MCP tool to analyze existing values, but always cross-reference fields with the upstream chart values structure if introducing new keys.
+- Если каталог приложения известен, не запускай поиск по всему репозиторию.
+- Не читай большие сгенерированные файлы без необходимости.
+- Не исследуй `.private-files/`.
+- Не читай и не выводи kubeconfig, приватные ключи, токены и содержимое Secret.
+- Не выполняй широкие `find`, `grep` или `rg` по `/home`, `/nix/store`, `/usr` и другим внешним каталогам.
+- Если путь к файлу уже известен, сразу используй `read`.
+- Для чтения файлов предпочитай `read`, а не `cat` или `sed`.
+- Для нескольких точечных изменений одного файла используй один вызов `edit` с несколькими заменами.
+
+### Работа с HelmRelease
+
+При работе с HelmRelease сначала изучи:
+
+- `spec.chart` или `chartRef`;
+- `spec.values`;
+- связанный `HelmRepository` или `OCIRepository`;
+- `kustomization.yaml` приложения;
+- текущую версию Helm chart.
+
+Не добавляй новые Helm values по предположению. Проверяй их по upstream values/schema документации соответствующей версии чарта.
+
+---
+
+## 4. Работа с файловой системой и sandbox pi
+
+- Работай внутри корня репозитория.
+- Не используй `/tmp` для временных файлов.
+- Для временных файлов используй:
+
+```text
+./.tmp/
+```
+
+- Каталог `.tmp/` должен быть добавлен в `.gitignore`.
+- После завершения работы удаляй временные файлы, если они больше не нужны.
+- Не пытайся обходить ограничения permission system.
+- Если команда заблокирована, не повторяй её в слегка изменённом виде без объяснения причины.
+- Не исследуй `/usr/bin` для поиска программ. Для проверки команды достаточно:
+
+```bash
+command -v <command>
+```
+
+- Не устанавливай системные пакеты без явного разрешения пользователя.
+- Не изменяй файлы вне репозитория без явного запроса.
+
+---
+
+## 5. Внешняя документация
+
+### Context7
+
+Если Context7 доступен, используй его для изучения документации библиотек и приложений:
+
+1. `resolve_library_id`;
+2. `query_docs`.
+
+Context7 предпочтителен для:
+
+- Remnawave;
+- Flux CD;
+- CloudNativePG;
+- Kubernetes API;
+- Helm;
+- oauth2-proxy;
+- поддерживаемых библиотек и приложений.
+
+Если Context7 не нашёл нужную информацию, используй официальную документацию или raw-файлы upstream-репозитория.
+
+### Использование curl
+
+Не загружай через `curl` полные HTML-страницы Docusaurus, SPA и других документационных сайтов, если информация доступна через Context7 или raw Markdown.
+
+`curl` разрешается использовать для:
+
+- raw-файлов GitHub;
+- публичных API без авторизации;
+- проверки HTTP-заголовков;
+- загрузки конкретных YAML, JSON или Markdown;
+- сайтов, которые пользователь явно попросил запрашивать через прокси.
+
+Если пользователь указал прокси, используй именно его:
+
+```bash
+curl --proxy http://127.0.0.1:1081 ...
+```
+
+Если нужно временно сохранить ответ:
+
+```bash
+mkdir -p .tmp
+curl --proxy http://127.0.0.1:1081 ... -o .tmp/response
+```
+
+### Запрещено без явного разрешения
+
+Не выполняй:
+
+- запросы к token/auth endpoints;
+- получение токенов GHCR, Docker Hub и других registry;
+- попытки обнаружения сохранённых credentials;
+- запросы к приватным registry API;
+- чтение приватных ключей;
+- чтение или вывод kubeconfig;
+- отправку содержимого репозитория, Secret или конфигурации кластера сторонним сервисам.
+
+---
+
+## 6. Flux и структура приложений
+
+Каждое приложение обычно находится в отдельном каталоге:
+
+```text
+01-flux/gilfoyle/apps/<app>/
+```
+
+Типичная структура:
+
+| Файл | Назначение |
+|---|---|
+| `namespace.yaml` | Namespace |
+| `helm-repo.yaml` | HelmRepository |
+| `oci-repo.yaml` | OCIRepository |
+| `helm-release.yaml` | HelmRelease |
+| `deployment.yaml` | Deployment |
+| `statefulset.yaml` | StatefulSet |
+| `service.yaml` | Service |
+| `ingress.yaml` | Ingress |
+| `pvc.yaml` | PersistentVolumeClaim |
+| `secret.enc.yaml` | SOPS-секрет |
+| `kustomization.yaml` | Сборка ресурсов приложения |
+| `README.md` | Особенности эксплуатации приложения |
+
+Для включения приложения его каталог добавляется в:
+
+```text
+01-flux/gilfoyle/apps/kustomization.yaml
+```
+
+### Когда приложение нельзя включать сразу
+
+Не добавляй незавершённое приложение в корневую Kustomization, если:
+
+- отсутствует обязательный зашифрованный секрет;
+- Kustomize ещё не собирается;
+- указан несуществующий образ;
+- сборка образа ещё не настроена;
+- не определён домен;
+- пользователь ещё должен принять архитектурное решение;
+- приложение гарантированно приведёт Flux Kustomization в состояние `NotReady`.
+
+Если приложение намеренно подготовлено, но пока выключено, оставь ресурс закомментированным и явно сообщи об этом пользователю.
+
+### Порядок ресурсов
+
+Порядок файлов в `resources:` не гарантирует готовность одного Kubernetes-ресурса до запуска другого.
+
+Например:
+
+- добавление CNPG Cluster раньше Deployment не гарантирует готовность БД;
+- добавление Kaniko Job раньше Deployment не гарантирует наличие образа к моменту старта Pod;
+- добавление Secret раньше Deployment не гарантирует особый порядок применения.
+
+Приложения должны корректно переживать временную недоступность зависимостей либо зависимости должны быть разделены на отдельные Flux Kustomization с `dependsOn` и health checks.
+
+Не добавляй `dependsOn` без необходимости, но и не полагайся на порядок YAML как на механизм ожидания готовности.
+
+---
+
+## 7. Секреты и SOPS
+
+### Основное правило
+
+Пользователь самостоятельно выполняет все команды `sops`.
+
+AI-агент:
+
+- не запускает `sops`;
+- не читает age private keys;
+- не расшифровывает существующие секреты;
+- не выводит содержимое `data` или `stringData`;
+- не изменяет существующие `*.enc.yaml`;
+- не редактирует metadata, annotations или другие plaintext-поля существующего SOPS-файла;
+- не пытается исправлять MAC;
+- не пытается перешифровывать или переименовывать SOPS-файлы пользователя.
+
+Даже изменение незашифрованной аннотации внутри `*.enc.yaml` может нарушить SOPS MAC.
+
+### Создание нового шаблона Secret
+
+Если пользователь просит создать шаблон секрета:
+
+1. Создай plaintext-файл:
+
+```text
+secret.yaml
+```
+
+2. Используй только явные плейсхолдеры:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+  namespace: app
+type: Opaque
+stringData:
+  username: CHANGE_ME
+  password: CHANGE_ME
+```
+
+3. Не помещай реальные секреты в шаблон.
+4. Не создавай plaintext-файл с именем `secret.enc.yaml`.
+5. Не запускай SOPS.
+6. Сообщи пользователю рекомендуемый порядок:
+
+```bash
+cp secret.yaml secret.enc.yaml
+sops --encrypt --in-place secret.enc.yaml
+```
+
+7. `secret.yaml` скрывается через `.gitignore` и не должен попадать в Git.
+8. Не добавляй несуществующий `secret.enc.yaml` в активный `kustomization.yaml`.
+9. Можно оставить закомментированную строку:
+
+```yaml
+# - secret.enc.yaml
+```
+
+10. После того как пользователь сообщил, что файл зашифрован:
+    - можно проверить только наличие поля `sops:`;
+    - можно добавить `secret.enc.yaml` в `kustomization.yaml`;
+    - нельзя читать, выводить или изменять его содержимое.
+
+### Проверка перед завершением
+
+Используй:
+
+```bash
+git status --short
+git diff --check
+git diff -- . ':!*.enc.yaml'
+```
+
+Не включай содержимое `*.enc.yaml` в финальный diff или ответ.
+
+---
+
+## 8. PostgreSQL и CloudNativePG
+
+Для PostgreSQL используй CloudNativePG.
+
+Существующий пример:
+
+```text
+01-flux/gilfoyle/apps/immich/pg.yaml
+```
+
+Рекомендации:
+
+- `apiVersion: postgresql.cnpg.io/v1`;
+- `kind: Cluster`;
+- для single-node homelab обычно `instances: 1`;
+- для важных данных использовать `local-path-critical`;
+- не создавать ручной Service для PostgreSQL, если CNPG уже создаёт:
+  - `<cluster>-rw`;
+  - `<cluster>-ro`;
+  - `<cluster>-r`;
+- для подключения приложения предпочтительно использовать автоматически созданный Secret `<cluster>-app`;
+- если приложение требует полный URI, использовать ключ `uri` из `<cluster>-app`, предварительно проверив его наличие в документации текущей версии CNPG;
+- не дублировать пароль БД в нескольких Secret без необходимости;
+- не добавлять расширения PostgreSQL, если приложение их не требует.
+
+Пример получения полного URI:
+
+```yaml
+env:
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: app-db-app
+        key: uri
+```
+
+Не предполагай, что база готова только потому, что объект `Cluster` уже создан. Приложение должно корректно перезапускаться до готовности БД.
+
+---
+
+## 9. Valkey и Redis
+
+Для внутренних сервисов Valkey/Redis:
+
+- используй ClusterIP Service;
+- не публикуй порт через Ingress или NodePort;
+- явно реши, нужна ли аутентификация;
+- не добавляй пароль без согласования, если существующий манифест работает без него;
+- если используется пароль, храни его в Secret и применяй одинаково в сервере и клиенте;
+- health probes должны учитывать пароль;
+- для временного кэша persistence можно отключить;
+- если Valkey используется как очередь или содержит важное состояние, согласуй persistence с пользователем.
+
+Не называй Valkey-ресурс Redis без необходимости, но учитывай, что приложение может ожидать переменные `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`.
+
+---
+
+## 10. Хранилища
+
+### StorageClass
+
+- `local-path` — обычные данные с `reclaimPolicy: Delete`;
+- `local-path-critical` — важные данные с `reclaimPolicy: Retain`.
+
+Для баз данных и критичных данных предпочтителен:
+
+```yaml
+storageClassName: local-path-critical
+```
+
+### Стратегия обновления
+
+Для приложений с `ReadWriteOnce` PVC обычно используй:
+
+```yaml
+strategy:
+  type: Recreate
+```
+
+### Разделение состояния и workspace
+
+Состояние приложения и пользовательский workspace — разные типы данных.
+
+Например, для coding agent:
+
+- `app-data` PVC:
+  - настройки приложения;
+  - конфигурация;
+  - история сессий;
+  - credentials;
+  - метаданные;
+- `app-workspace` PVC:
+  - Git-репозитории;
+  - пользовательский код;
+  - результаты работы агента.
+
+Никогда не используй `emptyDir` для:
+
+- кода;
+- Git-репозиториев;
+- пользовательских workspace;
+- истории сессий;
+- данных IDE или coding agent;
+- файлов, которые должны пережить пересоздание Pod.
+
+Для workspace используй отдельный PVC или `hostPath`, если пользователь явно выбрал этот вариант.
+
+`emptyDir` допустим только для:
+
+- кэша;
+- временных файлов;
+- runtime socket;
+- промежуточных файлов сборки;
+- данных, потеря которых безопасна.
+
+### Права доступа
+
+При использовании PVC учитывай UID/GID контейнера.
+
+Можно использовать:
+
+```yaml
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+```
+
+Но не полагайся на `fsGroup` без проверки поведения конкретного provisioner.
+
+Если PVC создаётся root-владельцем и приложение работает не от root, может потребоваться initContainer:
+
+```yaml
+initContainers:
+  - name: init-data
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - mkdir -p /data/app && chown -R 1000:1000 /data
+```
+
+Не добавляй initContainer автоматически, если он не нужен.
+
+---
+
+## 11. Ingress
+
+Стандартный IngressClass:
+
+```yaml
+ingressClassName: haproxy
+```
+
+TLS через cert-manager:
+
+```yaml
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+```
+
+### OAuth через oauth2-proxy
+
+Используй реализацию из:
+
+```text
+01-flux/gilfoyle/apps/coroot/
+```
+
+Основной Ingress приложения:
+
+```yaml
+metadata:
+  annotations:
+    haproxy-ingress.github.io/oauth: "oauth2_proxy"
+    haproxy-ingress.github.io/oauth-uri-prefix: "/oauth2"
+```
+
+Отдельный Ingress должен обслуживать:
+
+```text
+/oauth2/
+```
+
+Redirect URI должен точно совпадать с OIDC-клиентом в Pocket ID:
+
+```text
+https://<host>/oauth2/callback
+```
+
+Не создавай OIDC-клиент автоматически. Сообщи пользователю, что клиент нужно зарегистрировать вручную в Pocket ID.
+
+Для oauth2-proxy обычно требуются:
+
+```yaml
+stringData:
+  client-id: CHANGE_ME
+  client-secret: CHANGE_ME
+  cookie-secret: CHANGE_ME
+```
+
+`cookie-secret` генерируется отдельно и не выдаётся Pocket ID.
+
+Не делай `/api`, WebSocket или plugin paths публичными в обход OAuth, если документация приложения явно этого не требует.
+
+---
+
+## 12. Zot и сборка образов через Kaniko
+
+Локальный registry:
+
+```text
+zot.themiple.ru
+```
+
+Для приложений без готового публичного образа разрешена сборка через Kaniko.
+
+Рекомендуемая структура:
+
+```text
+Dockerfile
+build-configmap.yaml
+build-job.yaml
+```
+
+### Требования к Kaniko
+
+- образ Kaniko должен быть закреплён digest;
+- registry credentials передаются через Secret типа `kubernetes.io/dockerconfigjson`;
+- Secret монтируется как:
+
+```yaml
+items:
+  - key: .dockerconfigjson
+    path: config.json
+```
+
+- Kaniko не требует Kubernetes RBAC для обычной сборки и push;
+- не создавай ServiceAccount только ради Kaniko, если нет реальной необходимости;
+- не создавай Role/RoleBinding без необходимости;
+- не пытайся получать registry credentials через API;
+- не изменяй существующий зашифрованный pull-secret;
+- попроси пользователя самостоятельно настроить отражение pull-secret в новый namespace либо создать отдельный Secret.
+
+### Dockerfile через ConfigMap
+
+Если Dockerfile не требует дополнительных файлов контекста, его можно передать через ConfigMap:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-image
+data:
+  Dockerfile: |
+    FROM alpine:3.21
+```
+
+Если Dockerfile хранится отдельным файлом, можно использовать `configMapGenerator` Kustomize, чтобы не дублировать содержимое:
+
+```yaml
+configMapGenerator:
+  - name: app-dockerfile
+    files:
+      - Dockerfile
+```
+
+### Повторные сборки и Flux
+
+Будь осторожен с `Job` под управлением Flux:
+
+- Job имеет иммутабельный `spec.template`;
+- изменение Dockerfile или ConfigMap может потребовать пересоздания Job;
+- фиксированное имя Job может привести к ошибке immutable field;
+- новое имя Job или согласованный build revision гарантируют новый запуск;
+- не утверждай, что завершённый Job автоматически перезапустится при каждом reconcile;
+- `ttlSecondsAfterFinished` удаляет Job через Kubernetes TTL controller;
+- если удалённый TTL-контроллером Job остаётся желаемым ресурсом Flux, Flux может создать его снова на следующем reconcile, что приведёт к повторяющимся сборкам;
+- поэтому не используй `ttlSecondsAfterFinished` для постоянно управляемого Flux one-shot Job, если повторная сборка каждые reconcile нежелательна;
+- для периодических сборок используй CronJob;
+- для одноразовых сборок используй версионированное имя Job, отдельную Kustomization или ручное включение ресурса.
+
+### Порядок сборки и Deployment
+
+Job и Deployment в одной Kustomization применяются без ожидания завершения сборки.
+
+Допустимые варианты:
+
+1. Deployment временно получает `ImagePullBackOff`, затем восстанавливается после push.
+2. Сборка и runtime разделяются на отдельные Flux Kustomization с `dependsOn`.
+3. Build Job включается отдельно, а Deployment — после появления образа.
+4. Используется версионированный тег образа вместо `latest`.
+
+Для стабильной эксплуатации предпочтителен версионированный тег:
+
+```text
+zot.themiple.ru/<image>:<version>
+```
+
+`latest` допустим для экспериментов, но требует `imagePullPolicy: Always` и не обеспечивает воспроизводимость.
+
+---
+
+## 13. ServiceAccount и RBAC
+
+Не создавай ServiceAccount автоматически для каждого приложения.
+
+ServiceAccount нужен, если:
+
+- Pod должен обращаться к Kubernetes API;
+- требуется отдельная identity;
+- нужен отдельный набор `imagePullSecrets`;
+- необходимо ограничить права относительно `default` ServiceAccount.
+
+ServiceAccount не нужен, если:
+
+- приложение не обращается к Kubernetes API;
+- Kaniko только собирает и пушит образ;
+- `imagePullSecrets` уже указан прямо в Pod spec;
+- отсутствуют Role/ClusterRole и RoleBinding/ClusterRoleBinding.
+
+Не создавай пустой ServiceAccount «на будущее».
+
+Перед добавлением RBAC явно определи:
+
+- к каким API groups нужен доступ;
+- к каким resources;
+- какие verbs;
+- почему стандартных прав недостаточно.
+
+Используй принцип минимальных привилегий.
+
+---
+
+## 14. Прокси
+
+Если пользователь дал прокси, используй его только для внешних HTTP-запросов.
+
+Пример:
+
+```bash
+curl --proxy http://127.0.0.1:1081 ...
+```
+
+Не передавай через прокси:
+
+- содержимое Secret;
+- kubeconfig;
+- приватные ключи;
+- API-токены;
+- данные приватного репозитория.
+
+Прокси пользователя не следует автоматически добавлять в Kubernetes-манифесты. Для Pod это отдельное архитектурное решение, которое необходимо согласовать.
+
+---
+
+## 15. Уточняющие вопросы
+
+Задавай вопрос до внесения изменений, если неизвестны:
+
+- доменное имя;
+- размер PVC;
+- StorageClass;
+- нужен ли отдельный workspace PVC;
+- необходимость пароля Valkey/Redis;
+- путь для `hostPath`;
+- имя и тег образа;
+- публичный или приватный registry;
+- нужно ли сразу включать приложение в корневую Kustomization;
+- нужно ли изменять существующий SOPS-файл;
+- нужно ли применять изменения к живому кластеру;
+- требуется ли OAuth/OIDC;
+- должен ли build Job запускаться однократно, вручную или периодически.
+
+Не спрашивай о мелочах, если безопасный вариант очевиден и соответствует существующим соглашениям репозитория.
+
+Группируй связанные вопросы в один запрос.
+
+---
+
+## 16. Валидация
+
+После изменений приложения выполни:
+
+```bash
+kustomize build 01-flux/gilfoyle/apps/<app>
+```
+
+Если приложение добавлено в корневую Kustomization:
+
+```bash
+kustomize build 01-flux/gilfoyle/apps
+```
+
+Также проверь:
+
+```bash
+git status --short
+git diff --check
+```
+
+При необходимости:
+
+```bash
+git diff -- 01-flux/gilfoyle/apps/<app>
+```
+
+Не выводи содержимое `*.enc.yaml`.
+
+Не запускай без разрешения:
+
+```bash
+kubectl apply
+kubectl delete
+flux reconcile
+make reconcile
+helm install
+helm upgrade
+git commit
+git push
+```
+
+### Финальный ответ
+
+В финальном ответе укажи:
+
+1. Созданные и изменённые файлы.
+2. Принятые архитектурные решения.
+3. Выполненные проверки.
+4. Действия, которые должен выполнить пользователь.
+5. Незавершённые пункты.
+6. Риски и ограничения.
+
+Не утверждай, что приложение «готово к развёртыванию», если:
+
+- секреты ещё не созданы;
+- образ ещё не собран;
+- registry credentials отсутствуют;
+- DNS/OIDC-клиент не настроены;
+- Kustomize не собирается;
+- runtime-зависимости не проверены.
